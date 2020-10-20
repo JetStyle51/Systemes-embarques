@@ -1,5 +1,7 @@
 # FPGA DE10-Lite
 
+<img src="https://www.mouser.fr/images/marketingid/2016/microsites/132318264/terasic-de10-lite-board-layout.jpg"></img>
+
 ## Introduction
 The DE10
 DE10-Lite presents a robust hardware design platform built around the Altera MAX 10 FPGA.
