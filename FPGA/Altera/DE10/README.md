@@ -1,6 +1,6 @@
 # FPGA DE10-Lite
 
-<img src="https://www.mouser.fr/images/marketingid/2016/microsites/132318264/terasic-de10-lite-board-layout.jpg">
+<img src="https://ecetp.colorado.edu/kebo4187/wp-content/uploads/sites/95/2017/05/top-768x494.png">
 
 ## Introduction
 The DE10
