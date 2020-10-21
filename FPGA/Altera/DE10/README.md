@@ -1,5 +1,7 @@
 # FPGA DE10-Lite
 
+<img src="https://ecetp.colorado.edu/kebo4187/wp-content/uploads/sites/95/2017/05/top-768x494.png">
+
 ## Introduction
 The DE10
 DE10-Lite presents a robust hardware design platform built around the Altera MAX 10 FPGA.
