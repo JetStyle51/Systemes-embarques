@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;STM32_NUCLEO-F401RE_Assembler&apos; to &apos;Assembler&apos;" description="Rename resource &apos;STM32_NUCLEO-F401RE_Assembler&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="/STM32_NUCLEO-F401RE_Assembler" name="Assembler" stamp="1604506202775" updateReferences="true"/>
+</session>
