@@ -18,6 +18,20 @@ La mémoire présente est de type :  o Flash (256 Ko) pour la mémoire programme
 Les périphériques sont :  o ports d’entrées/sorties (PORT A, PORT B, PORT C, PORT D) avec un nombre de broches qui varient o Watchdog : IWDG (Independant Watchdog) et WWDG (Window Watchdog)  o Timers : timers basiques et avancés, 32 ou 16-bit o module de communication I2C  o module de communication SPI  o module de communication UART  o convertisseur analogique numérique o convertisseur numérique analogique o … 
  
 L’accès aux périphériques se fait à travers différents bus : AHB, APB1 et APB2. Vous ferez attention de gérer l’horloge pour chaque périphérique. 
+
+II. Clock System
+STM32 has five clock sources: HSI, HSE, LSI, LSE, PLL.
+- (1) HSI is a high-speed internal clock, RC oscillator, with a frequency of 8MHz and low accuracy.
+- (2) HSE is a high-speed external clock, which can be connected with quartz/ceramic resonator or external clock source. Its frequency range is from 4MHz to 16MHz.
+- (3) LSI is a low-speed internal clock, RC oscillator, with a frequency of 40 kHz, providing a low-power clock. 　
+- (4) LSE is a low-speed external clock connected to 32.768 kHz quartz crystal.
+- (5) PLL is the frequency doubling output of PLL, and its clock input source can be HSI/2, HSE or HSE/2. Frequency doubling can be chosen as 2 to 16 times, but the maximum output frequency should not exceed 72MHz.
+The system clock SYSCLK can be derived from three clock sources:
+- (1) HSI oscillator clock
+- (2) HSE oscillator clock
+- (3) PLL Clock
+STM32 can choose a clock signal to output to MCO foot (PA8), and can choose 2-frequency, HSI, HSE, or system clock for PLL output.
+Before any peripheral can be used, its corresponding clock must be enabled first.
  
 L'utilisation des registres des périphériques est expliquée dans la documentation technique du µcontrôleur (reference Manual)
 
