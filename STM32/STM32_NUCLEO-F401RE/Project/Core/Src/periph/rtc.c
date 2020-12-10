@@ -2,7 +2,7 @@
  * rtc.c
  *
  *  Created on: Nov 19, 2020
- *      Author: SESA598592
+ *      Author: Kasimashi
  */
 
 #include "main.h"
