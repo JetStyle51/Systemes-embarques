@@ -26,11 +26,18 @@
 /* USER CODE BEGIN Includes */
 #include "queue.h"
 #include "semphr.h"
+#include <string.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+// Création du sémaphore pour la ressource partagée
+xSemaphoreHandle Semaphore;
+xSemaphoreHandle SemaphoreLectureRapide;
+xSemaphoreHandle SemaphoreReLecture;
+xSemaphoreHandle SemaphoreNational;
+xSemaphoreHandle SemaphoreInternational;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -47,7 +54,7 @@
 // Définition des timeout pour les files en ms
 #define TIMEOUT_FILE_TAPIS_ARRIVEE   100
 #define TIMEOUT_FILE_TAPIS_RELECTURE 100
-#define TIMEOUT_FILE_TAPIS_DEPART		 100  // Timeout identique en national ou international
+#define TIMEOUT_FILE_TAPIS_DEPART	100  // Timeout identique en national ou international
 
 /* USER CODE END PD */
 
@@ -60,45 +67,39 @@
 UART_HandleTypeDef huart2;
 
 /* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
-};
 /* Definitions for Task_Tache_arri */
 osThreadId_t Task_Tache_arriHandle;
 const osThreadAttr_t Task_Tache_arri_attributes = {
   .name = "Task_Tache_arri",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityHigh,
   .stack_size = 128 * 4
 };
 /* Definitions for Task_Tache_lect */
 osThreadId_t Task_Tache_lectHandle;
 const osThreadAttr_t Task_Tache_lect_attributes = {
   .name = "Task_Tache_lect",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
 /* Definitions for Task_Tache_rele */
 osThreadId_t Task_Tache_releHandle;
 const osThreadAttr_t Task_Tache_rele_attributes = {
   .name = "Task_Tache_rele",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
 /* Definitions for Task_Tache_depa */
 osThreadId_t Task_Tache_depaHandle;
 const osThreadAttr_t Task_Tache_depa_attributes = {
   .name = "Task_Tache_depa",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
 /* Definitions for Task_Tache_inte */
 osThreadId_t Task_Tache_inteHandle;
 const osThreadAttr_t Task_Tache_inte_attributes = {
   .name = "Task_Tache_inte",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
 /* Definitions for File_tapis_arrivee */
@@ -134,7 +135,7 @@ const osMutexAttr_t Mutex_attributes = {
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
-void IdleTask(void *argument);
+void DefaultTask(void *argument);
 void Tache_arrivee(void *argument);
 void Tache_lecture_rapide(void *argument);
 void Tache_relecture(void *argument);
@@ -195,6 +196,16 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
+
+  Semaphore = xSemaphoreCreateMutex();
+
+  SemaphoreLectureRapide = xSemaphoreCreateMutex();
+
+  SemaphoreReLecture = xSemaphoreCreateMutex();
+
+  SemaphoreInternational = xSemaphoreCreateMutex();
+
+  SemaphoreNational = xSemaphoreCreateMutex();
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
@@ -203,39 +214,24 @@ int main(void)
 
   /* Create the queue(s) */
   /* creation of File_tapis_arrivee */
-  File_tapis_arriveeHandle = osMessageQueueNew (10, sizeof(uint16_t), &File_tapis_arrivee_attributes);
+  File_tapis_arriveeHandle = osMessageQueueNew (x, sizeof(unsigned int), &File_tapis_arrivee_attributes);
 
   /* creation of File_tapis_relecture */
-  File_tapis_relectureHandle = osMessageQueueNew (10, sizeof(uint16_t), &File_tapis_relecture_attributes);
+  File_tapis_relectureHandle = osMessageQueueNew (y, sizeof(unsigned int), &File_tapis_relecture_attributes);
 
   /* creation of File_depart_national */
-  File_depart_nationalHandle = osMessageQueueNew (10, sizeof(uint16_t), &File_depart_national_attributes);
+  File_depart_nationalHandle = osMessageQueueNew (z, sizeof(unsigned int), &File_depart_national_attributes);
 
   /* creation of File_depart_international */
-  File_depart_internationalHandle = osMessageQueueNew (10, sizeof(uint16_t), &File_depart_international_attributes);
+  File_depart_internationalHandle = osMessageQueueNew (z, sizeof(unsigned int), &File_depart_international_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(IdleTask, NULL, &defaultTask_attributes);
-
   /* creation of Task_Tache_arri */
   Task_Tache_arriHandle = osThreadNew(Tache_arrivee, NULL, &Task_Tache_arri_attributes);
-
-  /* creation of Task_Tache_lect */
-  Task_Tache_lectHandle = osThreadNew(Tache_lecture_rapide, NULL, &Task_Tache_lect_attributes);
-
-  /* creation of Task_Tache_rele */
-  Task_Tache_releHandle = osThreadNew(Tache_relecture, NULL, &Task_Tache_rele_attributes);
-
-  /* creation of Task_Tache_depa */
-  Task_Tache_depaHandle = osThreadNew(Tache_depart_national, NULL, &Task_Tache_depa_attributes);
-
-  /* creation of Task_Tache_inte */
-  Task_Tache_inteHandle = osThreadNew(Tache_depart_international, NULL, &Task_Tache_inte_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -371,33 +367,15 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void affiche_message(char *txt, unsigned int colis){
-	send_to_uart(txt);
-}
-
-void send_to_uart(char *txt){
-	HAL_UART_Transmit(&huart2, txt, sizeof(txt), HAL_MAX_DELAY);
-
+void affiche_message(char *txt){
+	//semaphore take
+	if (xSemaphoreTake(Semaphore,(portTickType)1000/portTICK_RATE_MS)) //On prend la ressource partagée
+	{
+		HAL_UART_Transmit(&huart2, txt, strlen(txt), HAL_MAX_DELAY);
+	}
+	xSemaphoreGive(Semaphore); //On rend le jeton
 }
 /* USER CODE END 4 */
-
-/* USER CODE BEGIN Header_IdleTask */
-/**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_IdleTask */
-void IdleTask(void *argument)
-{
-  /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END 5 */
-}
 
 /* USER CODE BEGIN Header_Tache_arrivee */
 /**
@@ -408,9 +386,29 @@ void IdleTask(void *argument)
 /* USER CODE END Header_Tache_arrivee */
 void Tache_arrivee(void *argument)
 {
+	unsigned int liste_colis[]={ 1,  3,  1,  2,  3,  0}; // Etat des bits B2, B1 et B0 -> 0 à 3 en décimal car B2=0
+	unsigned int liste_delai[]={ 5,100,200, 300,40, 500}; // Temps d'attente en ms pour le colis suivant
+	unsigned int num_colis = 0; // Initilisation du numéro de colis
+	unsigned int colis; // Colis (étiquette)
+	char etiquette;
+	char buff[] = "Le colis No 1 est depose sur le tapis roulant et il porte l'etiquette 5\r\n";
+	/* creation of Task_Tache_lect */
+	Task_Tache_lectHandle = osThreadNew(Tache_lecture_rapide, NULL, &Task_Tache_lect_attributes);
+
 	for(;;){
-		osDelay(1);
+		etiquette = liste_colis[num_colis % (sizeof(liste_colis)/sizeof(unsigned int))];
+		colis = (num_colis<<3) + etiquette;
+		if(!xQueueSendToBack(File_tapis_arriveeHandle, &colis, TIMEOUT_FILE_TAPIS_ARRIVEE)) // Il faudra gérer le débordement et afficher un message d'erreur
+		{
+			affiche_message("Debordement : Echec de l'envoi du colis\r\n");
+		}
+		sprintf(buff,"Le colis No %d est depose sur le tapis roulant et il porte l'etiquette %d\r\n",num_colis, etiquette);	// Il faudra gérer l'affichage comme une ressource partagée
+		num_colis++;
+		affiche_message(buff);
+		vTaskDelay(liste_delai[num_colis % (sizeof(liste_colis)/sizeof(unsigned int))]/portTICK_RATE_MS); // Attente entre deux colis en ms
+
 	}
+	vTaskDelete( NULL );
   /* USER CODE END Tache_arrivee */
 }
 
@@ -424,11 +422,55 @@ void Tache_arrivee(void *argument)
 void Tache_lecture_rapide(void *argument)
 {
   /* USER CODE BEGIN Tache_lecture_rapide */
+  unsigned int colis; // buffer de la file
+  char buff[50];
   /* Infinite loop */
+  Task_Tache_inteHandle = osThreadNew(Tache_depart_international, NULL, &Task_Tache_inte_attributes);
+  Task_Tache_depaHandle = osThreadNew(Tache_depart_national, NULL, &Task_Tache_depa_attributes);
+  Task_Tache_lectHandle = osThreadNew(Tache_relecture, NULL, &Task_Tache_rele_attributes);
   for(;;)
   {
+	  if (xQueuePeek(File_tapis_arriveeHandle,&colis,TIMEOUT_FILE_TAPIS_ARRIVEE)) //Si on reçoit quelque chose dans la file.
+		{
+		  if (xQueueReceive(File_tapis_arriveeHandle,&colis,TIMEOUT_FILE_TAPIS_ARRIVEE)) //Alors on l'efface de la file
+			{
+
+			  colis = colis & 0xFFFFFFFB;//Set du bit B2 à 0;
+
+			  if (colis & 2) //Si B1 = 1 : Etiquette invisible
+			  {
+				  if(!xQueueSendToBack(File_tapis_relectureHandle, &colis, TIMEOUT_FILE_TAPIS_RELECTURE)) // Il faudra gérer le débordement et afficher un message d'erreur
+				{
+					affiche_message("Debordement : Echec de le la file relecture\r\n");
+				}
+			  }
+			  else{ //B1=0 : Etiquette visible
+				  if (colis & 1){//Traitement colis tâche national si B0 ==0
+					  affiche_message("Mise sur tapis pour le national !\r\n");
+					  if(!xQueueSendToBack(File_depart_nationalHandle, &colis, TIMEOUT_FILE_TAPIS_DEPART)) // Il faudra gérer le débordement et afficher un message d'erreur
+						{
+							affiche_message("Debordement : Echec de l'envoi du colis au national\r\n");
+						}
+				  }
+				  else{//Traitement colis tâche international si B0==1
+					  affiche_message("Mise sur tapis pour l'international !\r\n");
+					  if(!xQueueSendToBack(File_depart_internationalHandle, &colis, TIMEOUT_FILE_TAPIS_DEPART)) // Il faudra gérer le débordement et afficher un message d'erreur
+						{
+							affiche_message("Debordement : Echec de l'envoi du colis au international\r\n");
+						}
+				  }
+			  }
+
+
+			  sprintf(buff,"Tache lecture rapide : %d\r\n",colis);
+			  affiche_message(buff);
+			}
+		}
+
+
     osDelay(1);
   }
+  vTaskDelete( NULL );
   /* USER CODE END Tache_lecture_rapide */
 }
 
@@ -442,11 +484,40 @@ void Tache_lecture_rapide(void *argument)
 void Tache_relecture(void *argument)
 {
   /* USER CODE BEGIN Tache_relecture */
+	unsigned int colis; // buffer de la file
+	char buff[50];
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  if (xSemaphoreTake(SemaphoreReLecture,(portTickType)1000/portTICK_RATE_MS)) //On prend la ressource partagée
+	  {
+		  if (xQueuePeek(File_tapis_relectureHandle,&colis,TIMEOUT_FILE_TAPIS_RELECTURE)) //Si on reçoit quelque chose dans la file.
+				{
+				  if (xQueueReceive(File_tapis_relectureHandle,&colis,TIMEOUT_FILE_TAPIS_RELECTURE)) //Alors on l'efface de la file
+					{
+					  //Traitement colis tâche national si B0 ==0
+
+					  //Traitement colis tâche international si B0==1
+
+					  colis = colis | 0x0000004;//Set du bit B2 à 1;
+
+					  colis = colis & 0xFFFFFFFD;//Set du bit B1 à 0;
+
+					  sprintf(buff,"Tache relecture : %d\r\n",colis);
+
+					  if(!xQueueSendToFront(File_tapis_arriveeHandle, &colis, TIMEOUT_FILE_TAPIS_ARRIVEE)) // Il faudra gérer le débordement et afficher un message d'erreur
+						{
+							affiche_message("Debordement : Echec de l'envoi du colis dans le retour arrivée\r\n");
+						}
+
+					  affiche_message(buff);
+					}
+				}
+	  }
+	  xSemaphoreGive(SemaphoreReLecture); //On rend le jeton
+      osDelay(1);
   }
+  vTaskDelete( NULL );
   /* USER CODE END Tache_relecture */
 }
 
@@ -460,11 +531,25 @@ void Tache_relecture(void *argument)
 void Tache_depart_national(void *argument)
 {
   /* USER CODE BEGIN Tache_depart_national */
+	unsigned int pvBuffer; // buffer de la file
   /* Infinite loop */
   for(;;)
   {
+	  if (xSemaphoreTake(SemaphoreNational,(portTickType)1000/portTICK_RATE_MS)) //On prend la ressource partagée
+		{
+		  if (xQueuePeek(File_depart_nationalHandle,&pvBuffer,TIMEOUT_FILE_TAPIS_RELECTURE)) //Si on reçoit quelque chose dans la file.
+			{
+			  if (xQueueReceive(File_depart_nationalHandle,&pvBuffer,TIMEOUT_FILE_TAPIS_RELECTURE)) //Alors on l'efface de la file
+				{
+
+				  affiche_message("Colis envoyé au national !\r\n");
+				}
+			}
+		}
+	  xSemaphoreGive(SemaphoreNational); //On rend le jeton
     osDelay(1);
   }
+  vTaskDelete( NULL );
   /* USER CODE END Tache_depart_national */
 }
 
@@ -478,11 +563,26 @@ void Tache_depart_national(void *argument)
 void Tache_depart_international(void *argument)
 {
   /* USER CODE BEGIN Tache_depart_international */
+	unsigned int pvBuffer; // buffer de la file
   /* Infinite loop */
   for(;;)
   {
+	  if (xSemaphoreTake(SemaphoreInternational,(portTickType)1000/portTICK_RATE_MS)) //On prend la ressource partagée
+	  	{
+		  if (xQueuePeek(File_depart_internationalHandle,&pvBuffer,TIMEOUT_FILE_TAPIS_RELECTURE)) //Si on reçoit quelque chose dans la file.
+			{
+			  if (xQueueReceive(File_depart_internationalHandle,&pvBuffer,TIMEOUT_FILE_TAPIS_RELECTURE)) //Alors on l'efface de la file
+				{
+
+				affiche_message("Colis envoyé à l'international !\r\n");
+				}
+			}
+
+	  	}
+	  xSemaphoreGive(SemaphoreInternational); //On rend le jeton
     osDelay(1);
   }
+  vTaskDelete( NULL );
   /* USER CODE END Tache_depart_international */
 }
 
