@@ -549,3 +549,4 @@ A partir de la, la carte a booté avec succès !
 # Références :
 http://syst.univ-brest.fr/boukhobza/images/stories/Documents/Teachings2/SEE/TP/TP5-9_LinuxBB.pdf
 http://www.blackpeppertech.com/pepper/tech-tree/boot-your-beaglebone-black-in-60-minutes/
+https://www.youtube.com/watch?v=l0746JYroOg
