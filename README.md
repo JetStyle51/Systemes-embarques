@@ -240,6 +240,43 @@ Ce nom est normalisé par ARM pour la compatibilité entre plates-formes et four
 
 ![interrupt](interrupt.png)
 
+## Le DMA
+L'accès direct à la mémoire (en anglais DMA pour Direct Memory Access) est un procédé informatique où des données circulant de, ou vers, un périphérique sont transférées directement par un contrôleur adapté vers la mémoire principale de la machine, sans intervention du microprocesseur si ce n'est pour lancer et conclure le transfert.
+La conclusion du transfert ou la disponibilité du périphérique peuvent être signalés par interruption.
+Son objectif est de décharger le processeur des transferts de données.
+Le contrôleur de DMA est un module matériel capable de réaliser des transferts entre les périphériques et la mémoire.
+L'avantage d'une telle technologie est que le processeur peut faire autre chose.
+Le transfert des données peut être plus rapide.
+
+![DMA](https://open4tech.com/wp-content/uploads/2020/04/DMA_block_diagram-1.jpg)
+
+La configuration minimale du DMA est la suivante :
+```
+Adresse de source du transfert
+Adresse de destination du transfert
+Nombre de données à transferer
+Taille des données (octets, mots...)
+```
+Le déclenchement du DMA peut se faire par 2 voies :
+- Déclenchement par logiciel (notamment dans le cas de transferts mémoire vers mémoire)
+- Déclenchement sur événement d’un périphérique (exemple : données reçues par la carte réseau)
+ 
+Contrôleur du DMA:
+- Plusieurs canaux (channels) pour effectuer plusieurs transferts en même temps (en provenance de plusieurs périphériques par exemple)
+- Registres de configuration par canaux
+- Transferts
+	• Périphérique vers mémoire
+	• Mémoire vers périphérique
+	• Périphérique vers périphérique
+	• Mémoire vers mémoire
+		- Possibilité de remplir une zone mémoire avec un motif
+
+Il y a différents mode d'opérations possibles :
+- Rafale (Burst) : Le bloc de données est transféré en une seule fois. Une fois que le contrôleur de DMA a accès au bus, il le conserve pendant tout le transfert. Le processeur ne peut pas faire d’accès mémoire pendant ce temps
+- Vol de cycle (Cycle Stealing) : Le processeur et le contrôleur de DMA se partagent alternativement le bus (un cycle pour le processeur, un pour le contrôleur de DMA)
+- Transparent : Le contrôleur de DMA n’a accès au bus que lorsque le processeur n’en a pas besoin.
+
+
 # OS et code BareMetal
 ## BareMetal
 
