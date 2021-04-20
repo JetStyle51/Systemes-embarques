@@ -5,8 +5,14 @@ Ce dépôt regroupe des outils / documentation / tutoriel et codes qui peuvent �
 ## Introdudction aux systèmes embarqués :
 
 Un système embarqué est un ensemble électronique et/ou informatique intégré comme composant d'un environnement plus important.
-Un système embarqué se définit surtout par les contraintes auxquelles il est soumis
+Un système embarqué se définit surtout par les contraintes auxquelles il est soumis.
+En général ce système est un microcontrôleur basé sur une technologie temps réel.
+Le microcontrôleur de référence pour l'embarqué se base sur du STM32 de chez STM Electronic. Qui embarque un processeur ARM.
+Celui-ci est représentatif des architectures modernes et est présent dans de nombreux systèmes industriels existants.
 
+![STM32](https://user.oc-static.com/upload/2017/08/16/15028731737617_NUCLEO-F103RB.jpeg)
+Elle est disponible pour un peu plus d’une dizaine d’euro.
+Cette carte dispose d’une connectique compatible avec les composants Arduino, ce qui vous permettra de poursuivre sa prise en main en investissant dans quelques composants supplémentaires. Pour l’utiliser, il suffit d’un simple câble USB  et une chaîne de développement adaptée.
 
 # Généralités sur les systèmes embarqués
 
@@ -73,6 +79,7 @@ Ainsi un programme functionnant sous interruption est préféré à un programme
 ## La compilation
 
 La compilation se fait la plupart du temps en embarqué sous la forme de cross-compilation.
+Mais qu'est-ce qu'une chaine de cross compilation?!
 La machine de développement est en effet en général un ordinateur commum et non pas la cible embarqué directement.
 Ainsi le programme est écris sur une machine Intel,AMD,etc ... et l'architecture cible est un processeur du type ARM, etc ...
 
@@ -85,6 +92,7 @@ Elle se déroule en plusieurs phases :
 - La phase de Link : Permet de rejoindre les fichiers entres eux (un programme C est parfois divisé en plusieurs sous fichiers).
 - La phase de boot : placé avant le main qui permet d'initilialiser la pile et son pointeurs ainsi que diverses variables.
 
+À cela s’ajoute des librairies pour le C++ ainsi que des librairies C avec des extensions POSIX et les librairies standards. Nous utiliserons enfin une implémentation de la microlib C spécifique pour ARM et qui offre une version optimisée (en particulier l’empreinte mémoire) des librairies standards pour les systèmes embarqués.
 ## Processus de démarrage
 
 Suivant le type de processeur et la complexité du matériel, le temps de boot du noyau dure de
@@ -300,7 +308,7 @@ Virtualisation
 Eclipse
 Code Composer Studio
 IAR Embedded Workbench
-Keil
+Keil (Permet de mettre en place un environnement embarqué rapidement et facilement, possède un simulateur et une interface de debug très intuitive).
 Quartus (FPGA Altera)
 Vivado (FPGA Xilinx)
 ```
