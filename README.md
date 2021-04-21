@@ -2,21 +2,50 @@
 
 Ce dépôt regroupe des outils / documentation / tutoriel et codes qui peuvent être utiles pour un système embarqué.
 
-## Introdudction aux systèmes embarqués :
+## Introduction aux systèmes embarqués :
 
 Un système embarqué est un ensemble électronique et/ou informatique intégré comme composant d'un environnement plus important.
 Un système embarqué se définit surtout par les contraintes auxquelles il est soumis.
 En général ce système est un microcontrôleur basé sur une technologie temps réel.
 Le microcontrôleur de référence pour l'embarqué se base sur du STM32 de chez STM Electronic. Qui embarque un processeur ARM.
 Celui-ci est représentatif des architectures modernes et est présent dans de nombreux systèmes industriels existants.
+Cela inclut les téléphones, les routeurs et sans oublier les appareils IoT qui semblent exploser dans les ventes ces jours-ci. 
+Cela dit, le processeur ARM est devenu l'un des cœurs de processeur les plus répandus au monde.
 
 ![STM32](https://user.oc-static.com/upload/2017/08/16/15028731737617_NUCLEO-F103RB.jpeg)
-Elle est disponible pour un peu plus d’une dizaine d’euro.
+Un tel processeur est disponible pour un peu plus d’une dizaine d’euro sur une carte de développement.
 Cette carte dispose d’une connectique compatible avec les composants Arduino, ce qui vous permettra de poursuivre sa prise en main en investissant dans quelques composants supplémentaires. Pour l’utiliser, il suffit d’un simple câble USB  et une chaîne de développement adaptée.
 
 # Généralités sur les systèmes embarqués
 
-## Microcontroleur / microprocesseur / et System on Chip (S.O.C)
+Je vais tenter de vulgariser tout les systèmes embarqués en allant du nanomètre jusqu'à notre echelle du cm, et expliquer le lien qu'il existe entre le matériel (hardware) et le logiciel (software).
+
+## Un Microprocesseur c'est quoi ?
+
+Un microprocesseur est un composant électronique très complexe et compliqué à prendre en main lorsqu'on est pas concepteur de celui ci.
+C'est un composant qui regroupe des millions de composants miniaturisés appelés transistors sur un processeur Intel Core i3/i5 ou i7 on peut compter plus de 1 500 000 000 transistors ! : en réalité ça ressemble à ceci :
+
+![Microprocesseur](http://visual6502.org/images/8086/8086_5x_top_cwP025614_1600w.jpg)
+Il existe des simulations sur internet qui nous permettre de comprendre le fonctionnement : http://www.visual6502.org/sim/varm/armgl.html
+Et à notre echelle ça ressemble plus à ceci :
+![Microprocesseur](http://visual6502.org/images/8086/Fujitsu_8086_8728_package_top.jpg)
+
+Sur les montages électroniques il possède plusieurs apparence appelée "Package" qui lui permet de s'adapter à tout type de PCB(Printed Circuit Board) et il est lui même relié à des composants exterieurs qui lui permet de communiquer avec le monde réel.
+
+![PCB](https://predictabledesigns.com/wp-content/uploads/2019/08/a-circuit-board-description-automatically-generat.jpeg)
+
+Ainsi le constructeur de carte nous donne soit un processeur seul et c'est à nous de l'introduire sur un PCB, ceci nous permet dans les fonctionalités du processeur de faire tout ce que l'on veux dans la mesure où le processeur est capable de le faire.
+Il existe aussi des cartes appelées cartes de développement comme la NUCLEO-F401RE que j'ai introduit plus haut pour faire le lien entre le processeur et le reste du circuit il existe un schematic qui permet au constructeur de relier les composants entres eux.
+
+![Exemple_schematic](https://os.mbed.com/media/uploads/juthi/nucleo_spi.png)
+
+Exemple simple de shematic pour NUCLEO-F401RE : https://dallasmakerspace.org/w/images/d/dc/NUCLEO-F401RE_Schematic.pdf
+
+Ce shématic est fait par logiciel par le concepteur de puce pour une carte de développement ou par un tier et permet aussi de créer des PCB sur ordinateur afin de créer la(sa) carte électronique suivant les besoins.
+
+
+
+## Microcontroleur / Microprocesseur / et System on Chip (S.O.C)
 
 Il est important de comprendre la différence qu'il existe entre un microcontroleur et un microprocesseur.
 
@@ -68,6 +97,9 @@ Quelques systems-on-chip Arm :
 On se demande pourquoi le language est particulièrement adapté à l'embarqué? La réponse est que le besoin de l'embarqué est de se retrouver très proche de la machine.
 Le language le plus proche de la machine est le langage assembleur, cependant écrire un programme en assembleur est pénible et long à faire. Le langage C permet de rajouter une couche, afin de programmer plus rapidement mais en restant proche du hardware.
 Ce dernier est réutilisable facilement et très bien strusturé pour nos applications.
+Mais parfois le language C ne suffit pas il faut revenir au language assembleur.
+Il peut être intéressant de mixer des fichiers écrits en langage C avec des fichiers écrits en langage d’assemblage.
+Un tel exemple est disponible dans la section STM32, Assembleur et C.
 
 ## Un programme en embarqué c'est quoi ?
 
@@ -78,13 +110,18 @@ Ainsi un programme functionnant sous interruption est préféré à un programme
 
 ## La compilation
 
+La compilation est le fait de transformer un programme écrit en language C/Assembleur vers du binaire (des 0 et 1).
+
 La compilation se fait la plupart du temps en embarqué sous la forme de cross-compilation.
 Mais qu'est-ce qu'une chaine de cross compilation?!
 La machine de développement est en effet en général un ordinateur commum et non pas la cible embarqué directement.
 Ainsi le programme est écris sur une machine Intel,AMD,etc ... et l'architecture cible est un processeur du type ARM, etc ...
 
 La compilation est le processus qui se déroule en plusieurs phases pour créer les fichiers nécéssaire à l'execution du programme par la machine.
-Elle permet de traduire un programme C en langage machine que pourras executer cette dernière.
+Elle permet de traduire un programme C en langage machine (binaire) que pourras executer cette dernière.
+
+![gif_compil](gif-assembly-to-machine-code.gif)
+
 Elle se déroule en plusieurs phases :
 
 - La phase de préprocessing : Le code source est analysé par le program appelée preprocesseur qui se charge d'enlever les commentaires, de remplacer les defines dans le code etc ...
@@ -93,16 +130,11 @@ Elle se déroule en plusieurs phases :
 - La phase de boot : placé avant le main qui permet d'initilialiser la pile et son pointeurs ainsi que diverses variables.
 
 À cela s’ajoute des librairies pour le C++ ainsi que des librairies C avec des extensions POSIX et les librairies standards. Nous utiliserons enfin une implémentation de la microlib C spécifique pour ARM et qui offre une version optimisée (en particulier l’empreinte mémoire) des librairies standards pour les systèmes embarqués.
-## Processus de démarrage
 
-Suivant le type de processeur et la complexité du matériel, le temps de boot du noyau dure de
-deux à cinq secondes environ.
-Le démarrage du processus init, les tâches administratives (montage systèmes de fichiers,
-configuration paramètres de /proc (sous linux) , etc.) prennent une à deux secondes supplémentaires.
-Le lancement de tous les services (réseau, authentification, environnement graphique, etc.)
-peut demander une dizaine de secondes.
-
-![alt text](boot.png)
+Lorsque que la compilation est effectuée cette dernière génères de nombreux fichiers qui peuvent nous être bien utile :
+- Les fichier listing (*.lst*) :  contiennent des informations sur les erreurs de compilation et/ou d’assemblage.
+- Le fichier mapping (*.map*) : contient l’ensemble des informations relatives à l’organisation mémoire de l’application. On peut y trouver entre autres les adresses physiques où seront implémentées les variables, les procédures, les sections, etc.
+- Le fichier exécutable ( *.axf* ou *.elf* ou *.hex*) : contient l’image (en binaire ou en version éditable de l’application)
 
 ## La MMU (Memory Managment Unit) au niveau du CPU :
 
@@ -133,22 +165,52 @@ La mémoire Flash est utilisé pour stocker le programme en mémoire,
 La mémoire EEPROM pour stocker les paramètres et les valeurs.
 La mémoire SRAM pour la pile (stack).
 
-## L'endianness
+## Comment est composé un programme ? (Segmentation)
 
-En mode Big Endian, le most significant bit(MSB) est à l'addresse la plus basse.
-En mode Little Endian, le less significant bit(LSB) est à l'addresse la plus basse.
+La mémoire d’un programme informatique est divisée ainsi :
 
-![endianess](endianess.png)
-Durant les transmissions en little endian le LSB est transmis en premier.
-En big endian, c'est le bit le plus haut est est transmis en premier.
+- Un segment de données (données + BSS + tas) ;
+- Une pile d'exécution, souvent abrégée par "la pile" ;
+- Un segment de code.
 
-![endianess_communication](endianess_communication.png)
+![Segmentation](https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Program_memory_layout.pdf/page1-350px-Program_memory_layout.pdf.jpg)
 
-## La Stack(Pile) & le Heap(Tas)
+### Segment .rodata (Read Only Data)
+
+Le segment .rodata contient des constantes statiques plutôt que des variables.
+
+### Segment de données .data
+
+Le segment .data contient toutes les variables globales ou statiques qui ont une valeur prédéfinie et peuvent être modifiées.
+Il s'agit de toutes les variables qui ne sont pas définies dans une fonction (et qui peuvent donc être accédées de n'importe où) ou qui sont définies dans une fonction mais qui sont définies comme statiques afin qu'elles conservent leur adresse lors des appels suivants.
+
+Les valeurs de ces variables sont initialement stockées dans la mémoire morte (généralement dans .text ) et sont copiées dans le segment .data pendant la routine de démarrage du programme.
+Notez que dans l'exemple ci-dessus, si ces variables avaient été déclarées à partir d'une fonction, elles seraient stockées par défaut dans le cadre de la pile locale.
+
+### Segment .text
+
+Le segment .text est l'endroit qui correspond à l'espace d'addressage du programme en ce qui concerne les instructions éxecuté par le programme. Cette zone est généralement en lecture seule et de taille fixe.
+
+### Segment .bss
+
+Le segment BSS aussi connu comme zone de données non initialisées commence à la fin du segment de données et contient toutes les variables globales et toutes les variables statiques qui sont initialisées à zéro ou n’ont pas d’initialisation explicite dans le code source. 
+Par exemple, une variable déclarée `static int i;` sera « contenue » dans le segment BSS.
+
+### Segment Heap : "Le Tas"
+
+La zone de tas commence généralement à la fin des segments .bss et .data et se développe vers des adresses plus grandes à partir de là.
+La zone de tas est gérée par malloc , calloc, realloc et free.
+La zone de tas est partagée par tous les threads, bibliothèques partagées et modules chargés dynamiquement dans un processus.
+
+### Segment Stack : "La Pile"
+La zone de pile contient la pile de programmes , une structure LIFO (Last In First Out). 
+Généralement située dans les parties supérieures de la mémoire. Un registre "pointeur de pile" suit le haut de la pile; il est ajusté chaque fois qu'une valeur est "poussée" sur la pile.
+
+Un exemple simple pour illustrer le cas d'une variable en pile et une autre en heap est la suivante :
 
 La zone mémoire ou sont conservés les varibales dépend ou est déclaré la variable dans le programme prenons l'exemple de ce programme :
 ```
-uint32_t myvarOutMain; //Saved int the data section of the RAM
+uint32_t myvarOutMain; //Saved int the data section of the RAM in the heap
 
 int main(void)
 {
@@ -158,30 +220,29 @@ int main(void)
 ```
 Dans le premier cas pour la variables `myvarOutMain` cette dernière est conservée dans le "heap", et pour la variables `myvarInMain` cette dernière est conservée dans la pile.
 
+## La Table des vecteurs et table de vecteur d'interruption. (Exceptions)
 
-## Bootloader ou bootstrap
-Un chargeur d'amorçage (ou bootloader) est un logiciel permettant de lancer un ou plusieurs systèmes d'exploitation (multiboot), 
-c'est-à-dire qu'il permet d'utiliser plusieurs systèmes, à des moments différents, sur la même machine. En ce qui nous concerne: un petit programme qui charge un grand
-programme et qui lui donne le contrôle.
+### Reset
+La réinitialisation est invoquée lors de la mise sous tension ou d’une réinitialisation à chaud.  
+Lorsque la réinitialisation est confirmée, le fonctionnement du processeur s’arrête, potentiellement à n’importe quel point d’une instruction. 
 
-Sous Windows ou Linux le plus répendu est "GNU GRUB"
-<img src="https://upload.wikimedia.org/wikipedia/commons/8/81/Grub_logo_large.png" height="250">
+### NMI
+Une interruption NonMaskable (NMI) peut être signalée par un périphérique ou déclenchée par un logiciel. C’est l’exception de priorité la plus élevée autre que la réinitialisation.
 
-<img src="https://i2.wp.com/itsfoss.com/wp-content/uploads/2019/12/grub_screen.png?fit=800%2C450&ssl=1" height="250">
+### Hard fault
+Une faute matérielle est une exception qui se produit en raison d’une erreur lors du traitement des exceptions, ou parce qu’une exception ne peut pas être gérée par un autre mécanisme d’exception.
 
-### Sur une plateforme embarqué.
+### Memory Management Fault
+Un défaut de gestion de la mémoire est une exception qui se produit en raison d’un défaut lié à la protection de la mémoire. Le MPU ou les contraintes de protection de la mémoire fixe déterminent ce défaut, tant pour les transactions d’instruction que de mémoire de données.
 
-Sur une plateforme embarqué on utilise plutôt un de ces bootloaders :
-- U-Boot (https://github.com/u-boot/u-boot)
-- RedBoot
-- Micro Monitor
+### IRQ
+Une interruption, ou IRQ, est une exception signalée par un périphérique, ou générée par une demande de logiciel. Toutes les interruptions sont asynchrones à l’exécution des instructions. Dans le système, les périphériques utilisent des interruptions pour communiquer avec le processeur.
 
+### SysTick
+Une exception SysTick est une exception que la minuterie du système génère lorsqu’elle atteint zéro. Le logiciel peut également générer une exception SysTick. Dans un environnement OS, le processeur peut utiliser cette exception comme coche système.
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/U-Boot_Logo.svg/langfr-440px-U-Boot_Logo.svg.png" height="250">
-
-Ce programme réside dans une zone spéciale de la mémoire flash et fournit un moyen pour :
-- Effectuer les tests d’initialisation du matériel
-- Charger une image du noyau et l’exécuter
+### SVCall
+Un appel de superviseur (SVC) est une exception qui est déclenchée par l’instruction de SVC. Dans un environnement OS, les applications peuvent utiliser des instructions SVC pour accéder aux fonctions du noyau OS et aux pilotes de périphériques.
 
 ## Les Clocks.
 
@@ -243,10 +304,12 @@ Ce dernier se sert du presclaer et de l'horloge pour s'incrémenter : l'autorelo
 ## Les interruptions
 
 Pour un système embarqué les interruptions sont déclarés dans la table des vecteurs et présent dans le fichier de startup :
-Le gestionnaire d'interruption doit avoir le nom écrit dans la table de vecteur
+Le gestionnaire d'interruption doit avoir le nom écrit dans la table de vecteur.
 Ce nom est normalisé par ARM pour la compatibilité entre plates-formes et fournisseurs.
 
 ![interrupt](interrupt.png)
+
+Cette dernière est déjà prédéfinie par le constructeur et elle est déclaré en tant que `.weak      EXTI15_10_IRQHandler` ce qui veut dire que par exemple pour l'interruption externe 15_10, la routine d'interruption (ou ISR) doit se nommer dans ce cas : "EXTI15_10_IRQHandler".
 
 ## Le DMA
 L'accès direct à la mémoire (en anglais DMA pour Direct Memory Access) est un procédé informatique où des données circulant de, ou vers, un périphérique sont transférées directement par un contrôleur adapté vers la mémoire principale de la machine, sans intervention du microprocesseur si ce n'est pour lancer et conclure le transfert.
@@ -283,6 +346,56 @@ Il y a différents mode d'opérations possibles :
 - Rafale (Burst) : Le bloc de données est transféré en une seule fois. Une fois que le contrôleur de DMA a accès au bus, il le conserve pendant tout le transfert. Le processeur ne peut pas faire d’accès mémoire pendant ce temps
 - Vol de cycle (Cycle Stealing) : Le processeur et le contrôleur de DMA se partagent alternativement le bus (un cycle pour le processeur, un pour le contrôleur de DMA)
 - Transparent : Le contrôleur de DMA n’a accès au bus que lorsque le processeur n’en a pas besoin.
+
+## L'endianness
+
+En mode Big Endian, le most significant bit(MSB) est à l'addresse la plus basse.
+En mode Little Endian, le less significant bit(LSB) est à l'addresse la plus basse.
+
+![endianess](endianess.png)
+Durant les transmissions en little endian le LSB est transmis en premier.
+En big endian, c'est le bit le plus haut est est transmis en premier.
+
+![endianess_communication](endianess_communication.png)
+
+# Les systèmes exploitations embarqués :
+
+## Processus de démarrage
+
+Suivant le type de processeur et la complexité du matériel, le temps de boot du noyau dure de
+deux à cinq secondes environ.
+Le démarrage du processus init, les tâches administratives (montage systèmes de fichiers,
+configuration paramètres de /proc (sous linux) , etc.) prennent une à deux secondes supplémentaires.
+Le lancement de tous les services (réseau, authentification, environnement graphique, etc.)
+peut demander une dizaine de secondes.
+
+![alt text](boot.png)
+
+## Bootloader ou bootstrap
+Un chargeur d'amorçage (ou bootloader) est un logiciel permettant de lancer un ou plusieurs systèmes d'exploitation (multiboot), 
+c'est-à-dire qu'il permet d'utiliser plusieurs systèmes, à des moments différents, sur la même machine. En ce qui nous concerne: un petit programme qui charge un grand
+programme et qui lui donne le contrôle.
+
+Sous Windows ou Linux le plus répendu est "GNU GRUB"
+<img src="https://upload.wikimedia.org/wikipedia/commons/8/81/Grub_logo_large.png" height="250">
+
+<img src="https://i2.wp.com/itsfoss.com/wp-content/uploads/2019/12/grub_screen.png?fit=800%2C450&ssl=1" height="250">
+
+### Sur une plateforme embarqué.
+
+Sur une plateforme embarqué on utilise plutôt un de ces bootloaders :
+- U-Boot (https://github.com/u-boot/u-boot)
+- RedBoot
+- Micro Monitor
+
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/U-Boot_Logo.svg/langfr-440px-U-Boot_Logo.svg.png" height="250">
+
+Ce programme réside dans une zone spéciale de la mémoire flash et fournit un moyen pour :
+- Effectuer les tests d’initialisation du matériel
+- Charger une image du noyau et l’exécuter
+
+
 
 
 # OS et code BareMetal
