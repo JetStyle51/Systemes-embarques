@@ -117,6 +117,11 @@ Mais qu'est-ce qu'une chaine de cross compilation?!
 La machine de développement est en effet en général un ordinateur commum et non pas la cible embarqué directement.
 Ainsi le programme est écris sur une machine Intel,AMD,etc ... et l'architecture cible est un processeur du type ARM, etc ...
 
+Un des cross-compilateurs les plus utilisé pour arm est : `arm-none-eabi`
+Qui présente les différents compilateurs habituel tel que `gcc g++ as` etc ...
+
+![arm-none-eabi](arm-none-eabi.png)
+
 La compilation est le processus qui se déroule en plusieurs phases pour créer les fichiers nécéssaire à l'execution du programme par la machine.
 Elle permet de traduire un programme C en langage machine (binaire) que pourras executer cette dernière.
 
@@ -132,22 +137,15 @@ Elle se déroule en plusieurs phases :
 À cela s’ajoute des librairies pour le C++ ainsi que des librairies C avec des extensions POSIX et les librairies standards. Nous utiliserons enfin une implémentation de la microlib C spécifique pour ARM et qui offre une version optimisée (en particulier l’empreinte mémoire) des librairies standards pour les systèmes embarqués.
 
 Lorsque que la compilation est effectuée cette dernière génères de nombreux fichiers qui peuvent nous être bien utile :
+
+- Un fichier fichier de link (*.ldscript*) qui te permet d'indiquer les différentes sections du programme ainsi que le point d'entrée.
 - Les fichier listing (*.lst*) :  contiennent des informations sur les erreurs de compilation et/ou d’assemblage.
 - Le fichier mapping (*.map*) : contient l’ensemble des informations relatives à l’organisation mémoire de l’application. On peut y trouver entre autres les adresses physiques où seront implémentées les variables, les procédures, les sections, etc.
 - Le fichier exécutable ( *.axf* ou *.elf* ou *.hex*) : contient l’image (en binaire ou en version éditable de l’application)
 
-## La MMU (Memory Managment Unit) au niveau du CPU :
+## Le démarrage (Startup) d'un programme embarqué :
 
-Un processus voit un espace de mémoire virtuelle, au sein du quel il peut accéder à n'importe quelle adresse de 0x000000 à 0xFFFFFFFF (sur processeur 32 bits).
-Cet espace est découpé en pages, et la MMU – Memory Managment Unit (un composant intégré dans le processeur) –  associe une page de mémoire virtuelle avec une page de mémoire physique en effectuant la modification d'adresse lors de l'accès à la mémoire. 
-
-Certaines pages de mémoire virtuelle n'ont pas de correspondance en mémoire physique : une tentative d'accès déclenche une interruption « faute de page ».
-Chaque processus dispose d'une configuration personnelle de la MMU. Cette dernière est programmée à chaque commutation entre deux processus.
-
-Un processus ne voit que les pages de mémoire physique qui lui ont été attribué par le noyau ; 
-les pages des autres processus ne sont projetées à aucun emplacement de sa mémoire virtuelle.
-
-![alt text](mmu.png)
+Le point d'entrée d'un programme est classiquement basé à l'addresse 0.
 
 ## Les types de mémoires
 
@@ -243,6 +241,19 @@ Une exception SysTick est une exception que la minuterie du système génère lo
 
 ### SVCall
 Un appel de superviseur (SVC) est une exception qui est déclenchée par l’instruction de SVC. Dans un environnement OS, les applications peuvent utiliser des instructions SVC pour accéder aux fonctions du noyau OS et aux pilotes de périphériques.
+
+## La MMU (Memory Managment Unit) au niveau du CPU :
+
+Un processus voit un espace de mémoire virtuelle, au sein du quel il peut accéder à n'importe quelle adresse de 0x000000 à 0xFFFFFFFF (sur processeur 32 bits).
+Cet espace est découpé en pages, et la MMU – Memory Managment Unit (un composant intégré dans le processeur) –  associe une page de mémoire virtuelle avec une page de mémoire physique en effectuant la modification d'adresse lors de l'accès à la mémoire. 
+
+Certaines pages de mémoire virtuelle n'ont pas de correspondance en mémoire physique : une tentative d'accès déclenche une interruption « faute de page ».
+Chaque processus dispose d'une configuration personnelle de la MMU. Cette dernière est programmée à chaque commutation entre deux processus.
+
+Un processus ne voit que les pages de mémoire physique qui lui ont été attribué par le noyau ; 
+les pages des autres processus ne sont projetées à aucun emplacement de sa mémoire virtuelle.
+
+![alt text](mmu.png)
 
 ## Les Clocks.
 
@@ -395,7 +406,22 @@ Ce programme réside dans une zone spéciale de la mémoire flash et fournit un 
 - Effectuer les tests d’initialisation du matériel
 - Charger une image du noyau et l’exécuter
 
+Description
+U-Boot (Universal Boot Loader) est le "BIOS" présent sur nos cartes.
 
+Si aucun système d'exploitation n'est requis pour votre application, U-Boot peut être utilisé comme base de développement.
+
+U-Boot est open source (GPL), sans royalties et bénéficie d'une communauté de développeurs importante et extrêmement active.
+
+Les tâches principales d'U-Boot
+Initialisation du matériel et plus particulièrement du contrôleur mémoire
+Passage des paramètres de démarrage au noyau Linux
+Lancement du noyau Linux
+U-Boot permet aussi de :
+Lire et écrire dans différentes zones mémoire
+Charger des images binaires dans la RAM par cable série, Ethernet ou USB
+Copier des images binaires de la RAM vers la FLASH
+Programmer le FPGA
 
 
 # OS et code BareMetal
@@ -431,9 +457,18 @@ Vivado (FPGA Xilinx)
 ```
 Bootloader	Secteur d'amorçage (Permet de charger un noyau depuis un système de fichier ext2 ou
 ext3/4)
+ARM		Advanced RISC Machines (Société de conception de processeur basé à Cambridge)
+CPU		Central Processing Unit
+FPU		Floating Point Unit
+MPU		Memory Protection Unit
 GPIO 	General Purpose Input/Output
+AHB		Advanced High-performance Bus
+APB		Advanced Peripheral Bus
+DMA		Direct Memory Access
 GRUB	GRand Unified Bootloader
 CAN 	Control Area Network (Bus de données)
+CRC		Cyclic Redundancy Check
+PWM		Pulse Width Modulation
 SoC		System On Chip
 ASICs	Application-specific integrated circuit
 I2C		Inter-Integrated Circuit (Communication Série)
@@ -441,12 +476,15 @@ SPI		Serial Periphical Interface (Communication Série)
 UART	Universal Asynchronous Transmitter Receiver (Communication Série)
 USB		Universal Serial Bus (Communication Série)
 BSP		Board Support Package (Logiciel bas niveau de support de cartes-mères, c'est-à-dire entre l'OS et la carte mère)
+INTC	Interrupt Controler
 DRIVER	Pilote (Permet de faire le lien entre le matériel et le logiciel)
 GPP		General Purpose Memory Controller
 FPGA	Field Programmable Gate Array
 QNET	Quadnet Pile d'execution
 RTOS	Real Time Operating System (Linux RT, FreeRTOS, VxWorks, Unix, OS/2 , Symbian, QNX , RTXC Quadros... )
 RSTP	Rapid Spanning Tree Protocol
+PLL 	Phase Locked Loop
+RMII 	Reduced media-independent interface (Ethernet)
 Modbus	TCP Modbus Protocol (Port 502)
 SNMP	Simple Network Management Protocol
 SNTP	Simple Network Time Protocol
@@ -455,7 +493,6 @@ HPC	Host Proxy Component
 EIP	EtherNet Industrial Protocol
 TFTP	Trivial File Transfer Protocol
 RTC	Real Time Clock
-DMA	Direct Memory Access
 DSP	Digital Signal Processor
 ΔΣ	ADC Analog to Digital Converter
 TPM	Trusted Plateform Module	 

@@ -243,13 +243,14 @@ main: /* Déclaration du programme principal */
 	Ce programme fait la somme de 1 jusqu a 20 des k en décrémentant X de 20 à 0 en utilisant un sous programme calcul_somme
 	*/
 	/* Cette instruction appel un sous programme qui est le même que précédement */
-	// bl calcul_somme // Appel le sous programme calcul_somme et copie PC vers LR
+	bl calcul_somme // Appel le sous programme calcul_somme et copie PC vers LR
 	/*
 	* Le but de ce programme est de trouver un min ou un max dans un tableau
 	*/
+	/*
 	bl min
 	bl max
-
+	*/
 /*
 	LoopForever
 	équivaut à
@@ -280,7 +281,7 @@ calcul_somme:
 	loop:
 		cmp r2, #0 //On compare r2 :X à 0
 		beq end //on saute à la fin du programme.
-		add r1, r2  //On rajoute 1 à r1
+		add r1, r2  //On rajoute r2 à r1
 		sub r2, r2, #1 //soustrait 1 au registre r2
 		b loop // retour au label loop
 	end:
