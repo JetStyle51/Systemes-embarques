@@ -145,7 +145,7 @@ Lorsque que la compilation est effectuée cette dernière génères de nombreux 
 
 ## Le démarrage (Startup) d'un programme embarqué :
 
-Le point d'entrée d'un programme est classiquement basé à l'addresse 0.
+Le point d'entrée d'un programme est classiquement basé à l'addresse 0x00000000. Ou sur l'addresse qui correspond à la mémoire ROM du processeur (varie suivant le processeur).
 
 ## Les types de mémoires
 
