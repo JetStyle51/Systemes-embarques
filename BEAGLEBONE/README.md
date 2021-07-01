@@ -5,6 +5,10 @@ BeagleBone® Black est la carte de développement la plus populaire chez les dé
 
 Nous utiliserons la carte BeagleBoneBlack pour la suite mais la démarche reste identique peut importe la carte.
 
+# Monter un JTAG sur le BeagleBone :
+Il faut l'adaptateur FTR-110-03-G-D-06 qu'il faut souder sur la carte de développement.
+
+
 # Flasher une nouvelle carte BeagleBone
 
 Sous Windows : se rendre sur le site : https://beagleboard.org/latest-images

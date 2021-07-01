@@ -16,9 +16,26 @@ Cela dit, le processeur ARM est devenu l'un des cœurs de processeur les plus r�
 Un tel processeur est disponible pour un peu plus d’une dizaine d’euro sur une carte de développement.
 Cette carte dispose d’une connectique compatible avec les composants Arduino, ce qui vous permettra de poursuivre sa prise en main en investissant dans quelques composants supplémentaires. Pour l’utiliser, il suffit d’un simple câble USB  et une chaîne de développement adaptée.
 
+
+# Sommaire
+
+ - [Généralités sur les systèmes embarqués](#embeddedsystem)
+	- [Un Microprocesseur c'est quoi ?](#microprocesseur)
+	- [Microcontroleur / Microprocesseur / et System on Chip (S.O.C)](#soc)
+ - [Le language C en embarqué ?](#clang)
+	- [Un programme en embarqué c'est quoi ?](#clangwhy)
+ - [Le MiddleWare](#middleware)
+ - [Les outils de l'embarqué](#tools)
+ - [Glossaire](#glossary)
+ 
+ 
+<div id='embeddedsystem'/>  
+
 # Généralités sur les systèmes embarqués
 
 Je vais tenter de vulgariser tout les systèmes embarqués en allant du nanomètre jusqu'à notre echelle du cm, et expliquer le lien qu'il existe entre le matériel (hardware) et le logiciel (software).
+
+<div id='microprocesseur'/>
 
 ## Un Microprocesseur c'est quoi ?
 
@@ -44,6 +61,7 @@ Exemple simple de shematic pour NUCLEO-F401RE : https://dallasmakerspace.org/w/i
 Ce shématic est fait par logiciel par le concepteur de puce pour une carte de développement ou par un tier et permet aussi de créer des PCB sur ordinateur afin de créer la(sa) carte électronique suivant les besoins.
 
 
+<div id='soc'/>
 
 ## Microcontroleur / Microprocesseur / et System on Chip (S.O.C)
 
@@ -92,7 +110,9 @@ Quelques systems-on-chip Arm :
 • Rockchip : RK30, RK31
 • Texas Instruments : OMAP, DaVinci
 
-## Le language C en embarqué ?
+<div id='clang'/>
+
+# Le language C en embarqué ?
 
 On se demande pourquoi le language est particulièrement adapté à l'embarqué? La réponse est que le besoin de l'embarqué est de se retrouver très proche de la machine.
 Le language le plus proche de la machine est le langage assembleur, cependant écrire un programme en assembleur est pénible et long à faire. Le langage C permet de rajouter une couche, afin de programmer plus rapidement mais en restant proche du hardware.
@@ -100,6 +120,8 @@ Ce dernier est réutilisable facilement et très bien strusturé pour nos applic
 Mais parfois le language C ne suffit pas il faut revenir au language assembleur.
 Il peut être intéressant de mixer des fichiers écrits en langage C avec des fichiers écrits en langage d’assemblage.
 Un tel exemple est disponible dans la section STM32, Assembleur et C.
+
+<div id='clangwhy'/>
 
 ## Un programme en embarqué c'est quoi ?
 
@@ -146,6 +168,7 @@ Lorsque que la compilation est effectuée cette dernière génères de nombreux 
 ## Le démarrage (Startup) d'un programme embarqué :
 
 Le point d'entrée d'un programme est classiquement basé à l'addresse 0x00000000. Ou sur l'addresse qui correspond à la mémoire ROM du processeur (varie suivant le processeur).
+
 
 ## Les types de mémoires
 
@@ -436,11 +459,31 @@ Au minimum la programmation BareMetal doit avoir un minibootloader pour initiali
 ![alt text](baremetal_linux_embarque.png)
 
 Sur un système à micro-contrôleur, le code métier(BareMetal Code) est le seul maître à bord, il accède à volonté aux périphériques, à la mémoire, etc. 
-
 Au contraire, dans un système à micro-processeur, le code métier n'est qu'une petite partie de l'ensemble du logiciel. Il est soumis à l'ordonnancement et au sous-système de gestion mémoire du noyau. Il s'appuie sur des bibliothèques et des utilitaires externes.
 
+<div id='middleware'/> 
 
-## Outils de développement pour les systèmes embarqués :
+# MiddleWare
+
+On appelle MiddleWare, le code que l'on peut trouver entre la partie Driver et la partie Applicative (coté utilisateur).
+
+## MiddleWare Cybersécurité
+Les middleWare les plus populaire dans l'embarqué en terme de fonctions liés à la cybersécurité est la librarie MbedTLS.
+
+Coté PC on trouve plutôt le middleware OpenSSL.
+### MbedTLS 
+Accès github : https://github.com/ARMmbed/mbedtls
+
+## MiddleWare TCP/IP
+Dans les MiddleWare TCP/IP on trouve plusieurs alternatives possibles : il existe dans le monde de l'opensource lwip-tcpip/lwip
+Payant on trouve aussi la Stack Treck ( https://treck.com/ ) qui permet de communiquer en utilisant les protocoles ethernets.
+
+### LwIP : (LightWeight IP Stack)
+Accès github : https://github.com/lwip-tcpip/lwip
+
+<div id='tools'/> 
+
+# Outils de développement pour les systèmes embarqués :
 
 ```
 Virtualisation
@@ -451,8 +494,9 @@ Keil (Permet de mettre en place un environnement embarqué rapidement et facilem
 Quartus (FPGA Altera)
 Vivado (FPGA Xilinx)
 ```
+<div id='glossary'/> 
 
-## Glossaire aux systèmes embarqués
+# Glossaire aux systèmes embarqués
 
 ```
 Bootloader	Secteur d'amorçage (Permet de charger un noyau depuis un système de fichier ext2 ou
@@ -505,5 +549,5 @@ NVIC	Nested Vectored Interrupt Controller
 PBS	Product Breakdown Structure
 ```
 
-## Références :
+# Références :
 http://syst.univ-brest.fr/boukhobza/images/stories/Documents/Teachings/OSM/Cours/OSM_7_Boukhobza.pdf
