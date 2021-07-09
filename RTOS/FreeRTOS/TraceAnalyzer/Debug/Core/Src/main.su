@@ -1,0 +1,13 @@
+main.c:158:5:main	8	static
+main.c:265:6:SystemClock_Config	88	static
+main.c:310:13:MX_USART2_UART_Init	8	static
+main.c:343:13:MX_GPIO_Init	48	static
+main.c:372:6:affiche_message	16	static
+main.c:382:6:vApplicationIdleHook	4	static
+main.c:397:6:Tache_arrivee	160	static
+main.c:432:6:Tache_lecture_rapide	72	static
+main.c:494:6:Tache_relecture	72	static
+main.c:541:6:Tache_depart_national	24	static
+main.c:573:6:Tache_depart_international	24	static
+main.c:607:6:HAL_TIM_PeriodElapsedCallback	16	static
+main.c:624:6:Error_Handler	4	static,ignoring_inline_asm
