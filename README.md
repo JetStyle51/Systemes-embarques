@@ -170,9 +170,11 @@ Lorsque que la compilation est effectuée cette dernière génères de nombreux 
 Le fichier de Linker est un fichier CAPITALE, il permet au compilateur de faire entre les sections, les zones mémoires et le programme.
 Il permet aussi d'indiquer au programme ou se trouve le point d'entrée.
 
+![memory_manegement](memory_management.png)
+
 Par exemple avec le compilateur chez TI ce fichier porte souvent l'extension .cmd, sous GCC il porte l'extension .ld .
 
-Les zones mémoires sont décrite dans ce fichier par exemple :
+Les zones mémoires sont décrite dans ce fichier par exemple pour le processeur AM335X Cortex A8 de chez TI:
 ```
 MEMORY
 {
@@ -259,10 +261,25 @@ SECTIONS
 }
 ```
 
+Rmq : 
+`#pragma` est spécifique au compilateur, la syntaxe peut donc varier pour votre compilateur.
+
+Le pragma DATA_SECTION alloue de l'espace pour le symbole dans une section appelée nom de section. La syntaxe du pragma en C pourrait être :
+```
+#pragma DATA_SECTION (symbol, "section name");
+```
+Le pragma DATA_SECTION est utile si vous avez des objets de données que vous souhaitez lier dans une zone distincte de la section .bss.
+
+Le pragma CODE_SECTION alloue de l'espace pour la fonction dans une section nommée section name. Le pragma CODE_SECTION est utile si vous avez des objets de code que vous souhaitez lier dans une zone distincte de la section .text. La syntaxe du pragma en C pourrait être :
+```
+#pragma CODE_SECTION (func, "section name");
+```
 
 ## Le démarrage (Startup) d'un programme embarqué :
 
 Le point d'entrée d'un programme est classiquement basé à l'addresse 0x00000000. Ou sur l'addresse qui correspond à la mémoire ROM du processeur (varie suivant le processeur).
+
+![startup_seq](https://www.digikey.fr/-/media/Images/Article%20Library/TechZone%20Articles/2020/June/IoT%20Security%20Fundamentals%20Part%203%20Ensuring%20Secure%20Boot%20and%20Firmware%20Update/article-2020june-iot-security-fundamentals-part-3-fig2.jpg?la=en&ts=713be6fb-ec8a-43ad-8c1a-3a7ed2661016)
 
 
 ## Les types de mémoires
