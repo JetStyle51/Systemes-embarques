@@ -547,6 +547,7 @@ SDRAM	Mémoire RAM volatile
 IOC	 	Input Output Controler
 NVIC	Nested Vectored Interrupt Controller
 PBS	Product Breakdown Structure
+JTAG Joint Test Action Group
 ```
 
 # Références :
