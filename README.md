@@ -165,9 +165,121 @@ Lorsque que la compilation est effectuée cette dernière génères de nombreux 
 - Le fichier mapping (*.map*) : contient l’ensemble des informations relatives à l’organisation mémoire de l’application. On peut y trouver entre autres les adresses physiques où seront implémentées les variables, les procédures, les sections, etc.
 - Le fichier exécutable ( *.axf* ou *.elf* ou *.hex*) : contient l’image (en binaire ou en version éditable de l’application)
 
+## Le Linker
+
+Le fichier de Linker est un fichier CAPITALE, il permet au compilateur de faire entre les sections, les zones mémoires et le programme.
+Il permet aussi d'indiquer au programme ou se trouve le point d'entrée.
+
+![memory_manegement](memory_management.png)
+
+Par exemple avec le compilateur chez TI ce fichier porte souvent l'extension .cmd, sous GCC il porte l'extension .ld .
+
+Les zones mémoires sont décrite dans ce fichier par exemple pour le processeur AM335X Cortex A8 de chez TI:
+```
+MEMORY
+{
+#ifndef M3_CORE     /* A8 memory map */
+
+    SRAM:     o = 0x402F0400  l = 0x0000FC00  /* 64kB internal SRAM */
+    L3OCMC0:  o = 0x40300000  l = 0x00010000  /* 64kB L3 OCMC SRAM */
+    M3SHUMEM: o = 0x44D00000  l = 0x00004000  /* 16kB M3 Shared Unified Code Space */
+    M3SHDMEM: o = 0x44D80000  l = 0x00002000  /* 8kB M3 Shared Data Memory */
+    DDR0:     o = 0x80000000  l = 0x40000000  /* 1GB external DDR Bank 0 */
+
+#else               /* M3 memory map */
+
+    M3UMEM:   o = 0x00000000  l = 0x00004000  /* 16kB M3 Local Unified Code Space */
+    M3DMEM:   o = 0x00080000  l = 0x00002000  /* 8kB M3 Local Data Memory */
+    M3SHUMEM: o = 0x20000000  l = 0x00004000  /* 16kB M3 Shared Unified Code Space */
+    M3SHDMEM: o = 0x20080000  l = 0x00002000  /* 8kB M3 Shared Data Memory */
+
+#endif    
+}
+```
+
+Les sections sont ensuite reparties dans la mémoire dans ce même fichier :
+```
+SECTIONS
+{
+#ifndef M3_CORE     /* A8 memory map */
+
+    .text          >  L3OCMC0
+    .stack         >  L3OCMC0
+    .bss           >  L3OCMC0
+    .cio           >  L3OCMC0
+    .const         >  L3OCMC0
+    .data          >  L3OCMC0
+    .switch        >  L3OCMC0
+    .sysmem        >  L3OCMC0
+    .far           >  L3OCMC0
+    .args          >  L3OCMC0
+    .ppinfo        >  L3OCMC0
+    .ppdata        >  L3OCMC0
+  
+    /* TI-ABI or COFF sections */
+    .pinit         >  L3OCMC0
+    .cinit         >  L3OCMC0
+  
+    /* EABI sections */
+    .binit         >  L3OCMC0
+    .init_array    >  L3OCMC0
+    .neardata      >  L3OCMC0
+    .fardata       >  L3OCMC0
+    .rodata        >  L3OCMC0
+    .c6xabi.exidx  >  L3OCMC0
+    .c6xabi.extab  >  L3OCMC0
+
+#else               /* M3 memory map */
+
+    .text          >  M3UMEM
+    .stack         >  M3DMEM
+    .bss           >  M3DMEM
+    .cio           >  M3DMEM
+    .const         >  M3UMEM
+    .data          >  M3DMEM
+    .switch        >  M3DMEM
+    .sysmem        >  M3DMEM
+    .far           >  M3DMEM
+    .args          >  M3DMEM
+    .ppinfo        >  M3DMEM
+    .ppdata        >  M3DMEM
+  
+    /* TI-ABI or COFF sections */
+    .pinit         >  M3UMEM
+    .cinit         >  M3UMEM
+  
+    /* EABI sections */
+    .binit         >  M3UMEM
+    .init_array    >  M3UMEM
+    .neardata      >  M3DMEM
+    .fardata       >  M3DMEM
+    .rodata        >  M3UMEM
+    .c6xabi.exidx  >  M3UMEM
+    .c6xabi.extab  >  M3UMEM
+
+#endif    
+}
+```
+
+Rmq : 
+`#pragma` est spécifique au compilateur, la syntaxe peut donc varier pour votre compilateur.
+
+Le pragma DATA_SECTION alloue de l'espace pour le symbole dans une section appelée nom de section. La syntaxe du pragma en C pourrait être :
+```
+#pragma DATA_SECTION (symbol, "section name");
+```
+Le pragma DATA_SECTION est utile si vous avez des objets de données que vous souhaitez lier dans une zone distincte de la section .bss.
+
+Le pragma CODE_SECTION alloue de l'espace pour la fonction dans une section nommée section name. Le pragma CODE_SECTION est utile si vous avez des objets de code que vous souhaitez lier dans une zone distincte de la section .text. La syntaxe du pragma en C pourrait être :
+```
+#pragma CODE_SECTION (func, "section name");
+```
+
 ## Le démarrage (Startup) d'un programme embarqué :
 
 Le point d'entrée d'un programme est classiquement basé à l'addresse 0x00000000. Ou sur l'addresse qui correspond à la mémoire ROM du processeur (varie suivant le processeur).
+
+![startup_seq](https://www.digikey.fr/-/media/Images/Article%20Library/TechZone%20Articles/2020/June/IoT%20Security%20Fundamentals%20Part%203%20Ensuring%20Secure%20Boot%20and%20Firmware%20Update/article-2020june-iot-security-fundamentals-part-3-fig2.jpg?la=en&ts=713be6fb-ec8a-43ad-8c1a-3a7ed2661016)
 
 
 ## Les types de mémoires
@@ -190,7 +302,7 @@ La mémoire SRAM pour la pile (stack).
 
 La mémoire d’un programme informatique est divisée ainsi :
 
-- Un segment de données (données + BSS + tas) ;
+- Un segment de données (Données + BSS + tas) ;
 - Une pile d'exécution, souvent abrégée par "la pile" ;
 - Un segment de code.
 
