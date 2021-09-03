@@ -517,6 +517,29 @@ peut demander une dizaine de secondes.
 
 ![alt text](boot.png)
 
+Plus précisément :
+
+Que faut-il pour démarrer Linux sur un périphérique embarqué tel que Beaglebone Black ?
+- Chargeur de démarrage ROM (RBL)
+C'est une petite mémoire qui s'exécute sur le SOC. Le tout premier morceau de code à exécuter sur le SOC lorsque vous alimentez la carte . Ceci est écrit par le vendeur (il ne peut donc pas être modifié ) et il est stocké dans la section ROM du SOC. Le travail du chargeur de démarrage ROM est de charger et d'exécuter le chargeur de démarrage de 2ème étape qui est le SPL/MLO.
+Il est en lecture seule et encapsulé par le fournisseur de matériel
+- Secondary Program Loader (Memory LOader)
+Son travail consiste à charger et à exécuter le chargeur de démarrage 3ème étape tel que U-boot .
+il peut être modifié et écrit. Des personnalisations peuvent être réalisées à partir de ce point même, bien que le niveau de l'utilisateur (connaissance élevée du langage C + connaissance intime du support matériel est indispensable) ne soit pas favorable et que la zone d'accès (ce qui peut être fait à ce stade) soit limitée.
+- U-boot
+Le travail du 3ème chargeur de démarrage étape consiste à charger et exécuter le noyau Linux .
+
+Qu'est-ce que uEnv.txt ?
+U-boot essaie toujours de lire le fichier uEnv.txt à partir de la source de démarrage, et si uEnv.txt n'est pas trouvé , alors U-boot utilise les valeurs par défaut pour les variables d'environnement .
+
+Comment écrire uEnv.txt à partir de zéro
+Utilisez la commande de boot
+
+![boot](https://miro.medium.com/max/1000/1*7u-rz5XxromeSN5jai8LQQ.png)
+
+Pour faire court : la commande de démarrage exécute toutes les commandes qui sont représentées par la variable d'environnement bootcmd (selon qu'elle a été définie)
+En modifiant la valeur de la variable d'environnement 'bootcmd', vous pouvez modifier le mode de démarrage.
+
 ## Bootloader ou bootstrap
 Un chargeur d'amorçage (ou bootloader) est un logiciel permettant de lancer un ou plusieurs systèmes d'exploitation (multiboot), 
 c'est-à-dire qu'il permet d'utiliser plusieurs systèmes, à des moments différents, sur la même machine. En ce qui nous concerne: un petit programme qui charge un grand
@@ -534,6 +557,7 @@ Sur une plateforme embarqué on utilise plutôt un de ces bootloaders :
 - RedBoot
 - Micro Monitor
 
+#### U-Boot
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/U-Boot_Logo.svg/langfr-440px-U-Boot_Logo.svg.png" height="250">
 
@@ -558,6 +582,23 @@ Charger des images binaires dans la RAM par cable série, Ethernet ou USB
 Copier des images binaires de la RAM vers la FLASH
 Programmer le FPGA
 
+Pour compiler U-Boot ceci dépend de la plateform pour lequel il est destiné à savoir quelle est le processeur qui tourne derrière ? :
+- Pour Beaglebone Black il faut lui donner le bonne config processeur : https://beagleboard.org/project/U-Boot+%28V1%29/
+
+Utilisation de U-Boot : 
+Cf : https://medium.com/geekculture/how-to-set-general-purpose-input-output-gpio-during-the-execution-of-u-boot-on-beaglebone-black-acd886307d49
+
+## Boot
+
+Le choix du mode de boot est défini par l'hardware par ordre de priorité ainsi par exemple dans le beaglebone black par exemple on boot suivant la séquence :
+
+![boot_mode](Boot_mode.png)
+
+### Depuis l'UART :
+
+En utilisant X-Modem et en uploadant dans l'ordre : le SPL, le U-Boot puis avec uboot via la commande Loady le Noyau.
+Cf :
+https://www.youtube.com/watch?v=3y1LMNPoaJI
 
 # OS et code BareMetal
 ## BareMetal
@@ -594,6 +635,15 @@ Payant on trouve aussi la Stack Treck ( https://treck.com/ ) qui permet de commu
 Accès github : https://github.com/lwip-tcpip/lwip
 
 <div id='tools'/> 
+
+
+# Questions courantes :
+
+Comment savoir ou est placer le code dans les différentes mémoires ? (Flash Interne, SRAM Interne ...)...
+C'est le script du Linker qui est responsable du placement du code en mémoire.
+
+Comment affecter les valeurs de l'addresse 0 (Stack Pointeur) et l'addresse 4 (Program Counter) ?
+Via le fichier assembleur startup_xxx.s
 
 # Outils de développement pour les systèmes embarqués :
 
@@ -664,3 +714,4 @@ JTAG Joint Test Action Group
 
 # Références :
 http://syst.univ-brest.fr/boukhobza/images/stories/Documents/Teachings/OSM/Cours/OSM_7_Boukhobza.pdf
+https://www.youtube.com/channel/UCY0sQ9hpSR6yZobt1qOv6DA
