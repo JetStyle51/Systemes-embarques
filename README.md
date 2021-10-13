@@ -637,9 +637,9 @@ Accès github : https://github.com/lwip-tcpip/lwip
 <div id='tools'/> 
 
 
-# Questions courantes :
+# FAQ :
 
-Comment savoir ou est placer le code dans les différentes mémoires ? (Flash Interne, SRAM Interne ...)...
+Comment savoir ou est placer le code dans les différentes mémoires ? (Flash Interne, SRAM Interne ...)?
 C'est le script du Linker qui est responsable du placement du code en mémoire.
 
 Comment affecter les valeurs de l'addresse 0 (Stack Pointeur) et l'addresse 4 (Program Counter) ?
@@ -710,6 +710,7 @@ IOC	 	Input Output Controler
 NVIC	Nested Vectored Interrupt Controller
 PBS	Product Breakdown Structure
 JTAG Joint Test Action Group
+OWASP Open Web Application Security Project (non-profit initiative to improving the security of web applications) : permet de corriger des risques de sécurités dans son code grâce à des outils : tel que Klocwork.
 ```
 
 # Références :
