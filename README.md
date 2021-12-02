@@ -636,6 +636,27 @@ Accès github : https://github.com/lwip-tcpip/lwip
 
 <div id='tools'/> 
 
+# Les couches du modèles OSI
+
+Le modèle OSI permet une représentation de l'informatique en "lasagne" par couche :
+Chacune des couches supérieur utile sa couche inférieur.
+
+
+![Modèle OSI](modele_osi.png)
+
+On retrouve le modèle OSI dans WireShark , ce dernier nous permet de décortiquer nos trames envoyés sur le réseau et d'y comprendre facilement le contenu
+
+![Wireshark](wireshark_1.png)
+
+
+## La couche application
+
+- Le protocole [Modbus](./PROTOCOL/7.APPLICATION/MODBUS/README.md)
+
+## La couche transport
+
+- Le protocole [TCP](./PROTOCOL/4.TRANSPORT/TCP/README.md)
+- Le protocole [UDP](./PROTOCOL/4.TRANSPORT/UDP/README.md)
 
 # FAQ :
 
