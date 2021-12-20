@@ -167,14 +167,56 @@ Lorsque que la compilation est effectuée cette dernière génères de nombreux 
 
 ## Le Linker
 
-Le fichier de Linker est un fichier CAPITALE, il permet au compilateur de faire entre les sections, les zones mémoires et le programme.
-Il permet aussi d'indiquer au programme ou se trouve le point d'entrée.
+Le fichier de Linker est un fichier CAPITALE:
 
-![memory_manegement](memory_management.png)
+Il permet au compilateur d'assembler les fichiers objects .o vers le fichier output final : 
+En d'autres termes : il permet au compilateur de faire entre les sections, les zones mémoires et le programme.
+Il possède aussi les informations concernant ou se trouve les données du programme et quelle taille elles possède.
+Il permet aussi d'indiquer au programme ou se trouve le point d'entrée. (Souvent pointé vers le vecteur de la table d'interruption).
 
-Par exemple avec le compilateur chez TI ce fichier porte souvent l'extension .cmd, sous GCC il porte l'extension .ld .
+Le language de programmation d'un fichier de Linker est "GNU Linker Command Language".
 
-Les zones mémoires sont décrite dans ce fichier par exemple pour le processeur AM335X Cortex A8 de chez TI:
+![memory_management](memory_management.png)
+
+Par exemple avec le compilateur chez TI ce fichier porte souvent l'extension .cmd, sous GCC il porte l'extension .ld, sous IAR on le retrouve sous l'extension .icf
+
+Les principales commandes du Linker sont les suivantes: Plus d'info (https://wiki.osdev.org/Linker_Scripts)
+```
+ENTRY
+OUTPUT_FORMAT
+STARTUP
+INPUT
+OUTPUT
+MEMORY
+SECTIONS
+KEEP
+ALIGN
+AT>
+```
+
+### ENTRY command :
+- Cette commande est utilisé comme l'addresse du point d'entrée du binaire, l'information est dans le header du fichier ELF généré.
+- Dans notre cas, "Reset_Handler" is the entry point into the application. (La première instruction que le processeur utilise lors d'un reset).
+La syntaxe est la suivante :
+```
+/* Entry Point */
+ENTRY(Reset_Handler)
+```
+
+Ceci veut dire que le processeur pointe sur la fonction généralement présent dans stm32_startup.c pour les STM32 :
+```
+void Reset_Handler(void);
+```
+
+### MEMORY command :
+
+Cette commande vous permet de décrire les différentes zones mémoires présentes dans la cible avec les informations concernant l'addresse de départ de la zone et sa taille.
+Le Linker utilise ses informations pour calculer la mémoire consommé sur les données ou pour le code. Et permet de renvoyer une erreur au link si la zone mémoire est dépassée.
+Typiquement un fichier de Link a une commande "MEMORY".
+
+Les zones mémoires sont décrite dans ce fichier par exemple pour le processeur AM335X de chez TI: ces zones dépendent du memory map du microcontoleur choisi.
+Par exemple pour le processeur AM335X on trouve dans la doc : https://www.ti.com/lit/ug/spruh73q/spruh73q.pdf
+![Memory_map_AM335X](memory_map_am335x.png)
 ```
 MEMORY
 {
@@ -197,7 +239,32 @@ MEMORY
 }
 ```
 
-Les sections sont ensuite reparties dans la mémoire dans ce même fichier :
+### SECTIONS command :
+Les SECTIONS sont utilisés pour créer différentes sections dans le fichier d'output ELF généré pour regrouper les sections des différents fichiers .o .
+A ce stade on parle de la composition interne dans la zone mémoire concerné.
+
+Les sections sont défini dans le fichier output dans l'ordre dans lequel les sections sont déclarés.
+Il permet de relier les sections aux zones mémoires ou l'on veut instruire le code.
+
+La syntaxe est la suivante :
+Les sections sont ensuite reparties dans la mémoire:
+```
+SECTIONS
+{
+    .text:
+	{
+	
+	
+	}> (vma) AT> (lma)
+}
+```
+où LMA (Low Memory Address) VMA (Virtual Memory Address).
+Rmq : vma est égal à lma, il est possible d’utiliser une syntaxe plus courte : ` }> FLASH`
+
+Selon le schéma ci-dessous, nous voyons que la zone .data doit être copiée de la FLASH (load address) vers la SRAM (virtual address ou absolute address). C’est ce que nous retrouvons dans la syntaxe de la commande SECTIONS > SRAM AT> FLASH
+![](https://linuxembedded.fr/sites/default/files/inline-images/data_move.jpg)
+
+Les sections sont ensuite reparties dans la mémoire:
 ```
 SECTIONS
 {
@@ -274,6 +341,28 @@ Le pragma CODE_SECTION alloue de l'espace pour la fonction dans une section nomm
 ```
 #pragma CODE_SECTION (func, "section name");
 ```
+
+### ALIGN command:
+Cette commande est utilisée pour aligner les sections sur des adresses multiples de 4, par exemple. On peut trouver ce genre de syntaxe dans les sections. Exemple :
+
+```
+SECTIONS
+{
+    .text:
+    {
+        *(.isr_vector)
+        *(.text)
+        *(.rodata) 
+        . = ALIGN(4);
+        end_of_text = .;       /* Store the updated location counter value for */
+                               /* ‘end_of_data’ symbol.                        */
+    }> FLASH
+}
+```
+
+Essayez toujours d’aligner les différentes sections avant leur fin. Dans notre cas, nous allons aligner les sections .text, .data et .bss.
+
+Plus d'info : https://linuxembedded.fr/2021/02/bare-metal-from-zero-to-blink
 
 ## Le démarrage (Startup) d'un programme embarqué :
 
