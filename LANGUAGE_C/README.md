@@ -92,4 +92,10 @@ a &=~(1<<n) // met à 0 le nème bit de a.
 a |= (1<<n) // met à 1 le nème bit de a.
 var = (a & (1<<12)) >> 12; // Query value of bit 12 of value called a
 a ^= (1<<4| 1<<3); // Basculler le bit 4 et 3 de a à 1.
+
+// off the top of my head
+#define SET_BIT(val, bitIndex) val |= (1 << bitIndex)
+#define CLEAR_BIT(val, bitIndex) val &= ~(1 << bitIndex)
+#define TOGGLE_BIT(val, bitIndex) val ^= (1 << bitIndex)
+#define BIT_IS_SET(val, bitIndex) (val & (1 << bitIndex))
 ```
