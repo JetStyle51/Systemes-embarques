@@ -709,21 +709,34 @@ Au contraire, dans un système à micro-processeur, le code métier n'est qu'une
 
 On appelle MiddleWare, le code que l'on peut trouver entre la partie Driver et la partie Applicative (coté utilisateur).
 
+TinyUSB : https://github.com/hathach/tinyusb
+FatFS : 
 ## MiddleWare Cybersécurité
 Les middleWare les plus populaire dans l'embarqué en terme de fonctions liés à la cybersécurité est la librarie MbedTLS.
 
-Coté PC on trouve plutôt le middleware OpenSSL.
+
 ### MbedTLS 
-Accès github : https://github.com/ARMmbed/mbedtls
+https://github.com/ARMmbed/mbedtls
+
+### WolfSSL
+https://github.com/wolfSSL/wolfssl
+
+### OpenSSL
+https://github.com/openssl/openssl
 
 ## MiddleWare TCP/IP
 Dans les MiddleWare TCP/IP on trouve plusieurs alternatives possibles : il existe dans le monde de l'opensource lwip-tcpip/lwip
 Payant on trouve aussi la Stack Treck ( https://treck.com/ ) qui permet de communiquer en utilisant les protocoles ethernets.
 
 ### LwIP : (LightWeight IP Stack)
-Accès github : https://github.com/lwip-tcpip/lwip
+https://github.com/lwip-tcpip/lwip
+
+### OpenSSH
+https://github.com/openssh/openssh-portable
 
 <div id='tools'/> 
+
+
 
 # Les couches du modèles OSI
 
