@@ -731,8 +731,17 @@ Payant on trouve aussi la Stack Treck ( https://treck.com/ ) qui permet de commu
 ### LwIP : (LightWeight IP Stack)
 https://github.com/lwip-tcpip/lwip
 
+### MinnowServer (Embedded Web Server)
+https://github.com/RealTimeLogic/MinnowServer
+
 ### OpenSSH
 https://github.com/openssh/openssh-portable
+
+### DropBear
+https://github.com/mkj/dropbear
+
+## MiddleWare Zip
+https://github.com/nih-at/libzip
 
 <div id='tools'/> 
 
