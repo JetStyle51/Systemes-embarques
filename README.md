@@ -110,6 +110,34 @@ Quelques systems-on-chip Arm :
 • Rockchip : RK30, RK31
 • Texas Instruments : OMAP, DaVinci
 
+# Les différents types de systèmes software
+
+On distingue plusieurs méthodes de fonctionnement dans un microcontroleur :
+![](https://asset.conrad.com/media10/isa/160267/c1/-/fr/191789_LB_01_FB/image.jpg)
+- Bare-metal programming
+	- Pas de sur couche OS
+	- Ne nécéssite pas beaucoup de puissance électrique
+	- Permet l'accès direct au hardware
+	- Permet le développement d'une application simple
+	- Timing Strict
+![](https://m.media-amazon.com/images/I/71Q4jCOGohL._SX342_.jpg)
+- Real-ime Operating System (RTOS)
+	- OS Rajouté : Ordonnancement
+	- Plus de puissance électrique nécéssaire
+	- Permet l'accès direct au hardware
+	- MultiThreading
+	- MultipleTask : Networking, Interface utilisateur etc ...
+	
+![](https://shop.mchobby.be/1496-large_default/beaglebone.jpg)
+- Embedded General Purpose Operating System (GPOS) (Linux, Mac, Windows, Android ...)
+	- Surcouche importante : OS, MMU
+	- Un microprocesseur est requis et parfois plus de mémoire (mémoire externe flash et ram additionnelles).
+	- Ne permet pas l'accès aux drivers hardware direct (Abstract layer)
+	- MultiThrading, MultiProcessing
+	- Multiple complex task : networking, filesystem, graphical interface etc ...
+	
+
+
 <div id='clang'/>
 
 # Le language C en embarqué ?
@@ -364,6 +392,15 @@ Essayez toujours d’aligner les différentes sections avant leur fin. Dans notr
 
 Plus d'info : https://linuxembedded.fr/2021/02/bare-metal-from-zero-to-blink
 
+## Introduction à l'RTOS
+
+### Introduction
+
+
+### Les sémaphores
+
+
+
 ## Le démarrage (Startup) d'un programme embarqué :
 
 Le point d'entrée d'un programme est classiquement basé à l'addresse 0x00000000. Ou sur l'addresse qui correspond à la mémoire ROM du processeur (varie suivant le processeur).
@@ -530,10 +567,19 @@ Par exemple si l'autoreload register est égale à 36, lorsque le compteur dépa
 
 ![timer](timer.png)
 
-Ce dernier se sert du presclaer et de l'horloge pour s'incrémenter : l'autoreload permet de remettre la valeur à 0 comme le montre l'exemple ci dessous :
+Ce dernier se sert du prescaler et de l'horloge pour s'incrémenter : l'autoreload permet de remettre la valeur à 0 comme le montre l'exemple ci dessous :
 
 ![timer2](timer2.png)
 
+## UART
+
+RX : UART  Receive Data
+TX : UART	Transmit Data
+CTS : Clear to Send
+DT: Data Terminal Ready
+DSR : Data Set Ready
+DCD : Data Carrier Detect
+RI : Ring Indicator
 
 
 ## Les interruptions
