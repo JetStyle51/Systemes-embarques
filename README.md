@@ -390,41 +390,39 @@ SECTIONS
 
 Essayez toujours d’aligner les différentes sections avant leur fin. Dans notre cas, nous allons aligner les sections .text, .data et .bss.
 
+Voici pour un programme simple ou vont être stockés les informations :
+
+```
+short m = 10; <- [ short m (Global vars(.bss)) ] [ = 10 (Init Vals(c.init)) ]
+short x = 2;  <- [ short x (Global vars(.bss)) ] [ = 2 (Init Vals(c.init)) ]
+short b = 5;  <- [ short b (Global vars(.bss)) ] [ = 5 (Init Vals(c.init)) ]
+main()
+{
+	short y = 0; <- [ short y = 0 (Local Vars (.stack) ]
+	
+	y = m*x; <- [ y = m*x (Code (.text) ]
+	y = y + b; <- [ y = y + b (Code (.text) ]
+	
+	printf("y=%d",y); <- [ printf("y=%d",y) (Std C I/O (.cio)]
+}
+```
+
 Plus d'info : https://linuxembedded.fr/2021/02/bare-metal-from-zero-to-blink
 
-## Introduction à l'RTOS
-
-### Introduction
-
-
-### Les sémaphores
-
-
-
-## Le démarrage (Startup) d'un programme embarqué :
-
-Le point d'entrée d'un programme est classiquement basé à l'addresse 0x00000000. Ou sur l'addresse qui correspond à la mémoire ROM du processeur (varie suivant le processeur).
-
-![startup_seq](https://www.digikey.fr/-/media/Images/Article%20Library/TechZone%20Articles/2020/June/IoT%20Security%20Fundamentals%20Part%203%20Ensuring%20Secure%20Boot%20and%20Firmware%20Update/article-2020june-iot-security-fundamentals-part-3-fig2.jpg?la=en&ts=713be6fb-ec8a-43ad-8c1a-3a7ed2661016)
-
-
-## Les types de mémoires
-
-On distingue deux types de mémoires:
-- Les mémoires volatiles (ce sont des mémoires qui s'éfface lorsque le dispositif est hors tension) :
-	- SRAM : Static Random Access Memory (Granularité à l'octet en écriture et en lecture | Accès rapide en R/W | Basse consommation en courant | Toujours utilisé dans les microcontroleurs)
-	- DRAM : Dynamic Random Access Memory (Granularité à l'octet, Ecriture rapide en écriture et en lecture | Haute consommation en courant | Non utilisé dans les microcontroleurs)
-- Les mémoires non volatiles (Des mémoires qui restent intacte lorsque le dispositif est mise hors tension)
-	- ROM : Read Only Memory (Granularité à l'octet R/W) | Accès rapide à la lecture | Impossible à écrire)
-	- EEPROM : Electrically Erasable Programmable Read Only Memory (Granularité à l'octet R/W | Accès lent écriture R/W)
-	- Flash (Nor) (Granularité d'un octet : doit être écris en pages (block d'octets) | Accès très lent en mode écriture | Toujours utilisé dans les microcontroleurs)
-
-Dans un microcontoleur : 
-La mémoire Flash est utilisé pour stocker le programme en mémoire, 
-La mémoire EEPROM pour stocker les paramètres et les valeurs.
-La mémoire SRAM pour la pile (stack).
-
 ## Comment est composé un programme ? (Segmentation)
+
+|	Nom de la section	| Description          | Memory Type | Location | Why |
+|:---------------:|:---------------:|:---------------:|:---------------:|:---------------:|
+|	.text		|   Code										|	Initialialisé	|	FLASH	|	Must exist after reset	|
+|	.switch		| Tables for switch instructions				|	Initialialisé	|			|		|
+|	.const 		| Global and static string literals				|	Initialialisé	|			|		|
+|	.cinit		| Initial values for global/static vars			|	Initialialisé	| FLASH | Must exist after reset |
+|	.pinit		| Initial values for C++ constructors			|	Initialialisé	|			|		|
+|	.bss		| Global and static variables					|	Non Initialialisé	| Internal | Must be in RAM Memory |
+|	.far		| Aggregates (arrays & structures)				|	Non Initialialisé	|			|		|
+|	.stack		| Stack (local variables)						|	Non Initialialisé	| Internal | Must be in RAM Memory |
+|	.sysmem		| Memory for malloc fcns (heap)					|	Non Initialialisé	|			|		|
+|	.cio		| Buffers for stdio functions					|	Non Initialialisé	|			|		|
 
 La mémoire d’un programme informatique est divisée ainsi :
 
@@ -478,6 +476,38 @@ int main(void)
 }
 ```
 Dans le premier cas pour la variables `myvarOutMain` cette dernière est conservée dans le "heap", et pour la variables `myvarInMain` cette dernière est conservée dans la pile.
+
+## Introduction à l'RTOS
+
+### Introduction
+
+
+### Les sémaphores
+
+
+
+## Le démarrage (Startup) d'un programme embarqué :
+
+Le point d'entrée d'un programme est classiquement basé à l'addresse 0x00000000. Ou sur l'addresse qui correspond à la mémoire ROM du processeur (varie suivant le processeur).
+
+![startup_seq](https://www.digikey.fr/-/media/Images/Article%20Library/TechZone%20Articles/2020/June/IoT%20Security%20Fundamentals%20Part%203%20Ensuring%20Secure%20Boot%20and%20Firmware%20Update/article-2020june-iot-security-fundamentals-part-3-fig2.jpg?la=en&ts=713be6fb-ec8a-43ad-8c1a-3a7ed2661016)
+
+
+## Les types de mémoires
+
+On distingue deux types de mémoires:
+- Les mémoires volatiles (ce sont des mémoires qui s'éfface lorsque le dispositif est hors tension) :
+	- SRAM : Static Random Access Memory (Granularité à l'octet en écriture et en lecture | Accès rapide en R/W | Basse consommation en courant | Toujours utilisé dans les microcontroleurs)
+	- DRAM : Dynamic Random Access Memory (Granularité à l'octet, Ecriture rapide en écriture et en lecture | Haute consommation en courant | Non utilisé dans les microcontroleurs)
+- Les mémoires non volatiles (Des mémoires qui restent intacte lorsque le dispositif est mise hors tension)
+	- ROM : Read Only Memory (Granularité à l'octet R/W) | Accès rapide à la lecture | Impossible à écrire)
+	- EEPROM : Electrically Erasable Programmable Read Only Memory (Granularité à l'octet R/W | Accès lent écriture R/W)
+	- Flash (Nor) (Granularité d'un octet : doit être écris en pages (block d'octets) | Accès très lent en mode écriture | Toujours utilisé dans les microcontroleurs)
+
+Dans un microcontoleur : 
+La mémoire Flash est utilisé pour stocker le programme en mémoire, 
+La mémoire EEPROM pour stocker les paramètres et les valeurs.
+La mémoire SRAM pour la pile (stack).
 
 ## La Table des vecteurs et table de vecteur d'interruption. (Exceptions)
 
