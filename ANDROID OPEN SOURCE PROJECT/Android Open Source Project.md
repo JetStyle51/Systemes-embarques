@@ -108,7 +108,15 @@ Or use **Fastboot** to flash them
 
 #### Linux kernel for Raspberry Pi
 As seen in ![Linux kernel](#linux-kernel) a customized kernel need to be built.
-For Raspberry Pi Leanage developed a specific kernel
+For Raspberry Pi Leanage developed a specific kernel.
+TO BE TESTED:
+```bash
+$ git clone https://github.com/lineage-rpi/android_kernel_brcm_rpi.git rpi4
+$ cd rpi4
+$ make lineageos_rpi4_defconfig
+$ make -j $(nproc) zImage
+$ make dtbs
+```
 
 ### ADB (Android Debug Bridge)
 ADB cannot be directly used with a Raspberry 3b+ board as it holds only USB Host ports but ADB needs a USB Peripheral port.
