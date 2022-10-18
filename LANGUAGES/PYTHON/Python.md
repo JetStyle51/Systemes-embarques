@@ -61,3 +61,6 @@ def read_manuf_log(expecter: OneWireSerialBytesExpecter, results):
             # Check that we found at least a test, otherwise there is an issue
             return
 ```
+
+A powerful website to simulate Regex for different languages including Python:
+https://regex101.com/
