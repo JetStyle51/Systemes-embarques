@@ -7,18 +7,20 @@ Ce dépôt regroupe des outils / documentation / tutoriel et codes qui peuvent �
 Un système embarqué est un ensemble électronique et/ou informatique intégré comme composant d'un environnement plus important.
 Un système embarqué se définit surtout par les contraintes auxquelles il est soumis.
 En général ce système est un microcontrôleur basé sur une technologie temps réel.
-Le microcontrôleur de référence pour l'embarqué se base sur du STM32 de chez STM Electronic. Qui embarque un processeur ARM.
+Le microcontrôleur de référence pour l'embarqué sur une architecture ARM, on retrouve ainsi comme référence le processeur basé sur STM32 de chez STM Electronic.
 Celui-ci est représentatif des architectures modernes et est présent dans de nombreux systèmes industriels existants.
 Cela inclut les téléphones, les routeurs et sans oublier les appareils IoT qui semblent exploser dans les ventes ces jours-ci. 
 Cela dit, le processeur ARM est devenu l'un des cœurs de processeur les plus répandus au monde.
 
 ![STM32](https://user.oc-static.com/upload/2017/08/16/15028731737617_NUCLEO-F103RB.jpeg)
 Un tel processeur est disponible pour un peu plus d’une dizaine d’euro sur une carte de développement.
-Cette carte dispose d’une connectique compatible avec les composants Arduino, ce qui vous permettra de poursuivre sa prise en main en investissant dans quelques composants supplémentaires. Pour l’utiliser, il suffit d’un simple câble USB  et une chaîne de développement adaptée.
+Cette carte dispose d’une connectique compatible avec les composants Arduino, ce qui vous permettra de poursuivre sa prise en main en investissant dans quelques composants supplémentaires. 
+Pour l’utiliser, il suffit d’un simple câble USB  et une chaîne de développement adaptée.
 
 
 # Sommaire
 
+ - [L'histoire de l'informatique UNIX](#history)
  - [Généralités sur les systèmes embarqués](#embeddedsystem)
 	- [Un Microprocesseur c'est quoi ?](#microprocesseur)
 	- [Microcontroleur / Microprocesseur / et System on Chip (S.O.C)](#soc)
@@ -29,6 +31,110 @@ Cette carte dispose d’une connectique compatible avec les composants Arduino, 
  - [Glossaire](#glossary)
  
  
+<div id='history'/>  
+
+# Un peu d'histoire ...
+
+## Multics, UNICS, UNIX
+Avant de rentrer dans les détails, commençons par comprendre comment on en est arrivé là ?
+
+La naissance d’UNIX est particulièrement liée à l’histoire des Bell Labs, des laboratoires qui verront la naissance du transistor, du laser, d’UNIX, du langage C et C++ ou encore de la fibre optique.
+En 1966, il ressort de la célèbre université de Berkeley, en Californie, avec une maîtrise en électronique et science informatique. 
+Peu après, il va rejoindre l’équipe de développement au Bell Labs du système d’exploitation Multics où il va rencontrer Dennis Ritchie.
+
+Le système Multics hérite d’un système plus ancien CTSS, dont la principale caractéristique était d’être à temps partagé et non en traitement par lot. 
+Plusieurs utilisateurs pouvaient utiliser la machine en même temps pour des tâches différentes. Le système d’invite de commande et de traitement de texte vont être les précurseurs du shell et de Troff au sein d’UNIX.
+
+Mais en plus de cet héritage, Multics va inclure le support du terminal distant permettant à chacun d’exécuter des tâches depuis son terminal dans son bureau sur l’ordinateur central. 
+Pour mener cela à bien, un système d’anneaux de sécurité va se mettre en place permettant aux applications de se lancer avec des droits plus ou moins restreints. 
+Technique que l’on va retrouver dans l’architecture des processeurs modernes comme le x86. Le système de fichier hiérarchisé va servir de référence à l’arborescence d’UNIX.
+
+Cependant, en 1969 le travail de Dennis Ritchie et de Ken Thompson s’arrêtera sur Multics, les Bell Labs se retirent du projet. Cela va laisser le champ libre à la création d’UNIX. 
+Ken profita du temps libéré pour créer son nouveau système, un prototype de ce qui deviendra UNIX sur un PDP-7 et le tout écrit dans un langage d’assemblage. 
+Son collègue Brian Kernighan suggéra de nommer le système en Unics car contrairement à Multics, il n’y avait qu’une seule méthode pour faire les choses. 
+Pour des raisons obscures, sans doute commerciales, Unics deviendra UNIX.
+
+Le problème de ce système est sa difficulté à être portée. Ken travaillait en parallèle sur un langage de programmation nommé le B qui descend du BCPL. 
+Ce langage est le prédécesseur du C. Cependant UNIX ne sera pas porté en B, en effet ce langage n’était pas adapté à un portage sur une autre machine aisément en plus de performances jugées médiocres. 
+UNIX a failli être porté à ce moment-là en TMG ou Fortran.
+
+En 1969 et 1970, Ritchie travailla sur le langage C pour succéder au B. 
+Après sa disponibilité en 1971, Ken s’attela à porter UNIX en C sur un PDP-11, cet ordinateur ouvrait la porte du traitement de texte avec le langage roff et ses descendants futurs. 
+À partir de 1972, UNIX est enfin portable et sa diffusion pourra bientôt commencer. Ken sera très impliqué dans son développement jusqu’à la diffusion de la version 6 en 1975. 
+Les versions 4, 5 et 6 avaient apporté notamment le pipe permettant de lier les programmes entre eux grâce à l’apport de Doug McIlroy. Cette année-là UNIX commença à quitter le Bell Labs. 
+Il prendra un congé sabbatique pour apporter UNIX dans l’université de Berkeley. Université qui sera à l’origine du schisme d’UNIX avec la naissance de BSD.
+
+Pendant son travail sur UNIX, il sera à l’origine des utilitaires grep et ed, l’éditeur de texte qui servira de base à la création de vi et Vim. 
+En effet, à cette époque les informaticiens étaient souvent proches des mathématiques et Ken Thompson va exploiter des travaux récents dans le milieu. 
+Dans les années 1940 et 1950, Michael Rabin, Dana Scott et Kleene vont travailler sur la formalisation des expressions régulières. Ken Thompson va être le premier à exploiter cette découverte mathématique. 
+Il ira plus loin en publiant un article en 1968 à ce sujet. 
+Il en découlera un algorithme qui rend triviale la compilation d’une expression régulière en un automate fini non-déterministe (AFN) et la conception d’une machine virtuelle permettant d’exécuter un tel AFN de façon performante. Ce travail sera utilisé dans l’éditeur de texte qed sur CTSS avant de poursuivre ce travail sur UNIX avec ed et grep. Par la suite la plupart des logiciels de gestion du texte ou les langages de programmations vont reprendre ces concepts.
+
+Ken Thompson n’a eu aucun regret sur la conception d’UNIX, quand on lui demandait ce qu’il aurait changé avec le recul dans UNIX, il répond avec humour «J’aurais orthographié creat avec un e». 
+La fonction système creat() n’est pas correctement orthographiée sans raison apparente, l’orthographe réelle rentrant dans les 6–8 caractères qui était une limite à cette époque.
+
+![Unix History](https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Unix_timeline.en.svg/2560px-Unix_timeline.en.svg.png)
+Source : https://zestedesavoir.com/articles/32/les-personnages-cles-de-linformatique-la-naissance-dunix/
+
+## BSD (Fin années 1970) (https://github.com/freebsd)
+
+Est une famille d'Unix libre, est une variante d'Unix développé par l'université de Berlekey en Californie.
+Berkeley Software Distribution.
+Le système BSD contient du code issue de Unix (d'AT&T) et au début des années 1990 AT&T intente un procès contre l'Université de Berkeley pour violation de propriété intellectuelle qui représente un frein majeur au développement.
+Finalement BSD supprimera les parties incriminés de son code et continuera son développement.
+Ainsi à partir d'ici trois Unix libres ont été développé à partir de 1993 :
+- FreeBSD : Le plus répandus
+- NetBSD : porté sur toutes les plateformes existances
+- OpenBSD : orienté sécurité. Très populaire sur les serveurs.
+
+Ils ont un tronc commun de commandes unix.
+La différence entre un système BSD et Linux se trouve au niveau de la licence.
+Licence beaucoup plus permissive qui inclut toutes les libertés.
+En autre :
+- Ne dites pas que c'est vous qui l'avez écrit.
+- Tant pis si ça ne fonctionne pas chez vous.
+- Prenez le code et faites-en ce que vous voulez.
+
+
+
+## Le projet GNU (1983) (https://www.gnu.org/home.fr.html)
+
+Créer en partie par Richard Stallman , le projet GNU (qui est aussi le nom d'un animal en afrique) signifie en réalité Gnu's Not Unix : c'est à dire que GNU n'est pas Unix.
+Malgrès que UNIX reste le système d'exploitation de référence. Son défaut c'est de ne pas être libre.
+L'ambition du porjet GNU consiste à proposer un système d'exploitation libre 100% compatible avec Unix mais qui n'est pas Unix (N'en contient aucune ligne de code).
+
+Unix est composé d'une mutltitude de petits programmes qui font des choses qui s'acquitte d'une tâche bien définie.
+Cette modularité va facilier la tâche au projet GNU qui se pose comme but concret de remplacer l'in après l'autres chacun des composants UNIX par un équivalent libre.
+Au passage Richard, créer l'organisation à but non lucratif (FSF en 1985) pour la défense et la promotion du logiciel libre.
+Pour éviter de se faire "cannibaliser par les éditeurs de logiciels propriéraires".
+Richard contribue ainsi en partie à développer compilateur, débogueur, et une suite d'outils basique ainsi que l'éditeur Emacs.
+En 1990, il ne manque plus que la partie importante : le kernel.
+En 1990, la FSF lance le développement de GNU/Hurd, un projet de noyau livre pour les sytèmes Unix, le projet va battre de l'aile dès le début. Et ne sera jamais publiée que dans une version 0.9 en décembre 2016.
+
+## GNU/Linux
+
+En 1991 Linus Torvalds étudiant finlandais à l'université de Helsinko, achète un IBM PC 30386 (Processeur 32-bits) (bête de course à l'époque).
+Au début de ces annnées les ordinateurs personnels à base Microsoft sont surtout équipé de MS-DOS (Un OS propriétaire et commercial livré sur disquettes floppy).
+Les ordinateurs de la marque Apple tournent sous Mac OS également propriétaire.
+En 1990, Unix reste hors de portée pour les particuliers, en vue des prox prohibitif des licenses, unix est relativement gourmand en ressource, l'installation nécessite une station de travail puissante.
+
+Dans ces mêmes années le système Minix (https://www.minix3.org/) développé par Andrew Tanenbaum est un Unix à but pédagogique. Qui servira à expliquer aux étudiants comment fonctionne un système d'exploitation.
+Documenté dans son livre Operating Systems Design & Implementation.
+Qui présente des limitations : (Connexion à distance limitée,Architecture 16-bits).
+Après avoir étudié Minix, linus décide d'écrire son propre émulateur de terminal, il écrit son code directement au niveau du matériel sans se servir du code Minix.
+Petit à petit son code devient un système d'exploitation. Et déploie sur le site de son université le message : "Un système d'exploitation livre pour les clones 386-AT juste pour le fun"
+Il publie sa première version 0.01 le 17 septembre 1991 qui portera le nom de "Freax" = free + freak + x final des Unix.
+Ceci dans un pavé dans la marre dans la communauté de l'informatique, un "vrai" unix pour les ordinateur personnel. Avec un noyeau libre avec les outils GNU.
+Il publie pour la première fois son code en entier en janvier 1992. Sous license GNU General Public License et encourage de nombreux utilisateurs à migrer vers Linux. C'est à dire une utilisation commercial de Linux.
+
+
+
+
+
+
+
+
+
 <div id='embeddedsystem'/>  
 
 # Généralités sur les systèmes embarqués
@@ -480,7 +586,24 @@ Dans le premier cas pour la variables `myvarOutMain` cette dernière est conserv
 ## Introduction à l'RTOS
 
 ### Introduction
+Les systèmes temps réel ont pour but de répondre suivant les exigences de l'application:
 
+Dans les RTOS les plus populaires on trouve en 2022 :
+- Deos (DDC-I)
+- embOS (SEGGER)
+- FreeRTOS (Amazon)
+- Integrity (Green Hills Software)
+- Keil RTX (ARM)
+- LynxOS (Lynx Software Technologies)
+- MQX (Philips NXP / Freescale)
+- Nucleus (Mentor Graphics)
+- Neutrino (BlackBerry)
+- PikeOS (Sysgo)
+- SafeRTOS (Wittenstein)
+- ThreadX (Microsoft Express Logic)
+- µC/OS (Micrium)
+- VxWorks (Wind River)
+- Zephyr (Linux Foundation)
 
 ### Les sémaphores
 
