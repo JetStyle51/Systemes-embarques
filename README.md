@@ -127,12 +127,10 @@ Il publie sa première version 0.01 le 17 septembre 1991 qui portera le nom de "
 Ceci dans un pavé dans la marre dans la communauté de l'informatique, un "vrai" unix pour les ordinateur personnel. Avec un noyeau libre avec les outils GNU.
 Il publie pour la première fois son code en entier en janvier 1992. Sous license GNU General Public License et encourage de nombreux utilisateurs à migrer vers Linux. C'est à dire une utilisation commercial de Linux.
 
+## La norme POSIX
 
-
-
-
-
-
+Portable Operatif System Interface (X pour Unix)
+Implements a set of automated conformance tests.
 
 
 <div id='embeddedsystem'/>  
@@ -168,6 +166,7 @@ Ce shématic est fait par logiciel par le concepteur de puce pour une carte de d
 
 
 <div id='soc'/>
+
 
 ## Microcontroleur / Microprocesseur / et System on Chip (S.O.C)
 
@@ -242,7 +241,31 @@ On distingue plusieurs méthodes de fonctionnement dans un microcontroleur :
 	- MultiThrading, MultiProcessing
 	- Multiple complex task : networking, filesystem, graphical interface etc ...
 	
+## Instruction Encoding and Decoding
+ARM possède plusieurs jeux d'instructions possibles. 
 
+- Le jeu d'instruction ARM est une suite d'instructions codé sur 32 bits.
+- Le jeu d'instruction Thumb est une suite d'instructions codé sur 16 bits.
+- Le jeu d'instruction Thumb-2 est une suite d'instruction qui peuvent être coté sur 16 ou sur 32 bits.
+
+Le choix du jeu d'instruction se base sur un compromis entre la densité du code et la performance.
+La densité du code messure le taille du binaire en finalité. Un code dense signifie une taille de binaire plus basse (moins de bytes).
+Une densité de code importante est parfois préféré dans les systèmes embarqués car moins de mémoire est nécéssaire pour encoder le binaire. 
+Cela a pour effet de réduire le cout et la consommation énergétique.
+
+Ainsi le jeu d'instruction 16 buts Thumb décroit la taille du programme. 
+Lorsque le jeu d'instruction ARM améliore la fléxibilité d'encodage. Il inclus alors plus d'opérande et améliorre les performances du système.
+Le jeu d'instruction Thumb-2 lui qui est un mélange des deux jeux d'instructions permet de trouver un bon compris entre l'utilisation des instructions 16 bits et 32 bits.
+Ce qui permet de trouver le bon compromis entre la taille du code et les performances.
+
+### Le jeu d'instruction Arm
+
+![ARM Instruction Set Encoding](https://developer.arm.com/documentation/ddi0406/c/Application-Level-Architecture/ARM-Instruction-Set-Encoding?lang=en)
+
+
+### Le jeu d'instruction Thumb
+
+![Thumb Instruction Set Encoding](https://developer.arm.com/documentation/ddi0406/c/Application-Level-Architecture/Thumb-Instruction-Set-Encoding?lang=en)
 
 <div id='clang'/>
 
@@ -737,13 +760,260 @@ RI : Ring Indicator
 
 ## Les interruptions
 
-Pour un système embarqué les interruptions sont déclarés dans la table des vecteurs et présent dans le fichier de startup :
-Le gestionnaire d'interruption doit avoir le nom écrit dans la table de vecteur.
-Ce nom est normalisé par ARM pour la compatibilité entre plates-formes et fournisseurs.
+### Introduction
+"Une interruption est simplement une fonction qui est appelée par l'hardware".
 
-![interrupt](interrupt.png)
+Une interruption s'appuie sur une combinaison logicielle et matériel pour forcer le processeur à stopper ses activités courante pour éxécuter une partie de code particulière appelée ISR (Interrupt Service Routine).
+Une ISR réponds à un événement qui peut venir du hardware ou du software.
+Quand la routine d'interruption se termine le processeur revient automatiquement à ses activités initiales.
+Le flux d'execution continue comme si rien ne s'était passé.
+Les interruptions sont largements utilisés pour répondre à des requêtes hardware. Par exemple, elles peuvent être utilisés pour des évenements extérieurs (comme l'appui sur un boutton poussoir ou la reception d'un message sur un port de communication).
+Les interruptions sont aussi utilisés lorsqu'une erreur critique intervient et permet au processeur de s'arrêter "proprement".
+(Il peut s'agir ici d'un "memory access violation", ou la détection d'instructions non définies).
+Les interruptions permettent aussi d'effectuer plusieurs tâche simultanément. A un temps donné, le microcontroleur peut faire tourner qu'il seul programme.
+Cependant, les interruptions permettent aux processeurs de traiter plusieurs tâches de calcul alternativement de manière multiplexée.
+Les différentes tâches peuvent être traité de façon pré-emptive ou non-premptive.
+- Dans le cas préemptif. Si la tâche est plus urgente que la tâche en cours d'éxécution. Cette dernière peut stopper la première sans demander aucune cooperation : la tâche va prendre le controle sur le processeur. Ensuite le processeur va retourner dans son état initial quand la tâche plus prioritaire aura terminé son traitement.
+- Dans le cas non préemptif, la nouvelle tâche ne peux pas interrompre le processeur dans son execution actuelle. Un système non préventif s'appuie souvent sur le temporisateur système pour exécuter plusieurs tâches périodiquement de manière circulaire. (Round Robin)
 
-Cette dernière est déjà prédéfinie par le constructeur et elle est déclaré en tant que `.weak      EXTI15_10_IRQHandler` ce qui veut dire que par exemple pour l'interruption externe 15_10, la routine d'interruption (ou ISR) doit se nommer dans ce cas : "EXTI15_10_IRQHandler".
+Une alternative aux interruptions est de stopper un flux d'éxecution en attendant un événement ou utiliser un système d'interrogation périodique (polling).
+Dans le mode polling, le proccesseur interroge continuellement les I/O pour vérifier si l'événement attendu est arrivée.
+La latence à détecter l'événement est déterminé par la période de polling.
+Dans le mode interruption, le processeur donne le mécanisme qui permet de générer un signal pour informer immédiatement le processeur que l'événement est arrivé.
+
+Exemple : Prenons l'exemple d'un téléphone pour comparer l'efficasité du mode interruption / mode polling.
+Supposons que nous attendons un appel.  
+Dans le mode polling, vous décrochez tout les 10 secondes pour savoir si quelqu'un est au bout du fil.
+Dans le mode interruption, vous continuez ce que vous faites et vous vous arrétez quand le téléphone sonne vous arrétez ce que vous faites le temps de répondre.
+
+### Interruption Number
+Le Cortex-M supporte jusqu'à 256 interruptions. Chaques interruptions excepté l'interruption de `reset` est identifié par un numéro unique allant de -15 à 240.
+Les numéros d'interruptions sont défini par ARM et les manufactureurs collectivement. Ces nombres sont fixés et le software ne peux pas les redéfinir.
+Les interruptions sont divisés en deux groupes :
+- Les 16 premières interruptions sont les interruptions systèmes.
+Ces interruptions viennent du coeur du processeur. Ces numéros d'interruptions sont définis par ARM. Spécifiquement par l'ARM CMSIS Library. (CMSIS : Cortex Microcrontrol Software Interface Standard).
+- Les interruptions restantes sont les interruptions liés aux périphériques. (Aussi appelée interruption non système).
+Ces interruptions commence à patir de 0 et sont définis aussi par le manufactureur. Le nombre total d'interruption varie suivant le processeur.
+
+Ce changement de numérotation permet de différencier interruption système d'interruption non système.
+On retrouve les numéros des interruptions dans le Reference Manual.
+
+![Interrupt_Table](interrupt_table.png)
+
+Quand une interruption est appelée le numéro d'interruption est stocké dans le program status register(PSR), le numéro d'interuption n'est pas stocké en utilisant le complément à 2 pour les nombres négatifs, on utilise à la place un offset de 15 pour revenir sur des nombres positifs.
+
+Interruption number in PSR = CMSIS interrupt number + 15
+
+Quand on parle du numéro d'interruption on parle toujours au sens du CMSIS.
+Chaques numéros d'interruption a dans sa table d'interruption une addresse associée qui correspond au pointeur vers l'ISR.
+
+### Les ISR
+
+Une interrupt service routine (ISR) est aussi appelée interrupt handler, c'est une fonction particulière que l'hardware peut appeler automatiquement en réponse à une interruption. Chaques interruptions a une implementation par défaut dans le code de démarrage). (`startup_stm32xxxx.s`).
+Dans la majeure partie de ces interruptions il s'agit d'une boucle "morte" comme le montre le code ci dessous : (HardFault_Handler)
+```
+void HardFault_Handler(void)
+{
+  /* USER CODE BEGIN HardFault_IRQn 0 */
+
+  /* USER CODE END HardFault_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+    /* USER CODE END W1_HardFault_IRQn 0 */
+  }
+}
+```
+
+Dans un cadre courant ces fonctions sont définis par le mot clée `weak`, ce mot clé signifie que si une fonction a le même nom (symbole) elle sera écrasé par la fonction non-`weak`.
+Les ISRs ne retournent habituellement aucune valeur parce qu'elles sont appelées par l'hardware.
+De plus les IRS ne prennent pas d'argument excepté le SVC_Handler
+
+Prenons l'exemple du Reset_Handler, qui est executé quand le processeur est resetté ou quand il démarre.
+On peut voir ici que le reset handler, copie les data segments vers les data memory puis appel ensuite la fonction main.
+
+```
+Reset_Handler:  
+  ldr   sp, =_estack    		 /* set stack pointer */
+
+/* Copy the data segment initializers from flash to SRAM */  
+  ldr r0, =_sdata
+  ldr r1, =_edata
+  ldr r2, =_sidata
+  movs r3, #0
+  b LoopCopyDataInit
+
+CopyDataInit:
+  ldr r4, [r2, r3]
+  str r4, [r0, r3]
+  adds r3, r3, #4
+
+LoopCopyDataInit:
+  adds r4, r0, r3
+  cmp r4, r1
+  bcc CopyDataInit
+  
+/* Zero fill the bss segment. */
+  ldr r2, =_sbss
+  ldr r4, =_ebss
+  movs r3, #0
+  b LoopFillZerobss
+
+FillZerobss:
+  str  r3, [r2]
+  adds r2, r2, #4
+
+LoopFillZerobss:
+  cmp r2, r4
+  bcc FillZerobss
+
+/* Call the clock system initialization function.*/
+  bl  SystemInit   
+/* Call static constructors */
+    bl __libc_init_array
+/* Call the application's entry point.*/
+  bl  main
+  bx  lr    
+.size  Reset_Handler, .-Reset_Handler
+```
+
+### Interrupt Vector Table
+
+Pour un système embarqué pour chaques interruptions il y a une ISR associée les interruptions sont déclarés dans la table des vecteurs.
+Pour une interruption i (defini dans le CMSIS), l'addresse mémoire associée correspond à (i + 16)th entrée de la table d'interruption.
+La table d'interruption stock les addresse mémoire de chaques routines d'interruption (sur 4 bytes : car une mémoire STM est sur 32 bits).
+
+Par exemple le numéro d'interruption associé à SysTick est -1. Donc l'addresse de SysTick Handler peut être trouvée en lisant le word stocké à l'addresse suivante :
+
+`SysTick_Handler = 0x00000004 + 4*(-1+15) = 0x00000003C`
+
+Quand le processeur ARM Cortex est démarré (ou reset), le processeur lit les deux words localisés aux addresse 0x00000000 et 0x00000004 en mémoire. Le processeur utilise alors le mot 0x00000000 pour initialiser le main stack pointer (MSP) et le mot 0x00000004 pour le program counter(PC).
+Le mot stocké à l'addresse 0x00000004 est l'addresse mémoire du Reset_Handler() qui est déterminé par le compilateur et par le fichier du linker.
+Quand le PC est initialisé le programme démarre son execution.
+
+Quand les premiers mots sont utilisés pour initialiser le MSP, et le PC. La table des interruptions stock elle tout les addresses mémoires pour les interruptions.
+
+Le Cortex-M utilise un "nested vectored interrupt controller" (NVIC) pour gérer les interruptions.
+Le NVIC permet d'activer les interruptions en utilisant un système de priorités.
+Le processeur appel les interruptions suivants leurs priorités. Ainsi le processeur peut stopper une interruption handler si une autre interruption arrive avec une priorité plus élevé.
+Comme les tâches, le processeur rend ensuite la main à la première priorité pour terminer son traitement.
+Il faut savoir que le Reset_Handler est l'ISR avec la priorité la plus haute (en général -3).
+
+Des examples d'interruptions système sont : Supervisor call interrupts, System timer interrupt, fault-handling interrupt, hard-fault.
+Des exemples d'interruptions non système sont : ADC interrupt, USB interrupt, Serial Communication interrupt (SPI,I2C,USART).
+
+Il faut savoir qu'il est possible de relocaliser la table des interruptions vers une région différente (SRAM,FLASH), ainsi le processeur peut booter depuis différents devices.
+Par exemple sur le STM32L4 l'adresse mémoire 0x0000004 est un alias à la mémoire 0x08000004 par défault, qui est une addresse mémoire assigné à la mémoire flash interne processeur.
+
+## Interrupt Stacking and Unstacking
+Quand le processeur traite une interruption, ce dernier gère automatique la stack et le unstack.
+- Interrupt Stacking : Avant d'executer une interruption, on rajoute automatiquement sur la stack la valeurs de 8 registres pour préserver l'état précédent du processeur. Dans ces 8 registres on trouve : (R0,R1,R2 et R3) et 4 autres registres qui sont R12,LR,PSR et le PC.
+(Au passage le PC est modifiée avec l'addresse de l'ISR à effectuer)
+- Interrupt UnStacking : Quand l'interruption est terminée, la phase de unstack se fait automatiquement, cette dernier remet les valeurs des 8 registres dans l'état initial.
+Cela permet de retrouver l'environnement tel qu'il était avant l'ISR. En même temps le processeur nettoie les bits qu'ils avait activé dans le NVIC status register.
+
+![Stack_Unstack](Stack_Unstack_ISR.jpg)
+
+Comme le PC a été sauvegardé dans la stack, le processeur est capable de revenir dans son état initial.
+L'ISR termine par l'instruction `BX LR`. Notez que LR dans une routine d'interruption a une signification différente de LR dans une sous-routine normale.
+- LR dans une routine normale représente l'addresse de retour de la fonction appelée. Quand une function est appelée le registre LR stocke l'addresse mémoire de l'instruction suivante à appeler en sortie de function.
+La valeur de LR est copié dans le PC quand une function se termine.
+
+- LR dans une routine de service d'interruption indique si le processeur utilise la pile principale ou la pile de processus dans l'opération push et pop. 
+Etant donné que le sous-programme de service d'interruption pré-entretient et récupère le PC via l'empilement et le désempilement, 
+le registre LR n'est pas copié pour définir le PC lorsqu'un sous-programme de service d'interruption se termine. 
+Au lieu de cela, le registre LR doit être fixé à une valeur spéciale. Pour indiquer si le processeur doit désempiler les données de la pile principale (MSP) ou de la pile de processus (PSP).
+
+## Nested Vectored Interrupt Controller (NVIC)
+
+Le NVIC est construit dans les ARM-Cortex-M pour traiter toutes les interruptions. Il offre 3 fonctions clées :
+
+- Activer et Déactiver les interruptions.
+- Configurer les priorités et les sous priorités d'une interruption spécifique.
+- Set et Clear les handling bit d'une interruption particulière.
+
+Le nombre d'interruption supporté par le processeur diffère suivant le processeur. Ce nombre est stocké dans le registre `ICTR` (Interrupt Controller Type Register).
+
+Chaques interruptions possède 6 bits de contrôles :
+| Interupt Control Bit  | Corresponding register (32 bits)          |
+| :--------------- |:---------------:|
+| Enable bit  |   Interrupt set enable register (ISER)        |
+| Disable bit  | Interrupt clear enable register (ICER)             |
+| Pending bit  | Interrupt Set pending register (ISPR)          |
+| Un-pending bit  | Interrupt Clear Pending Register (ICPR)          |
+| Active bit  | Interrupt Active bit Register (IABR)          |
+| Software trigger bit  | Software trigger interrupt register (STIR)          |
+
+Le Cortex-M défini huits registres pour controler chaques bits. Par exemple ISER0, ISER1, ..., ISER7 qui sont capable d'activer les 256 interruptions.
+
+- Activation et Déactivation des interrupts : 
+Ecrire un 1 dans le registre permet d'activer l'interruption correspondante. Ecrire un 0, par contre ne permet pas de déactiver l'interruption demandé.
+Ecrire un 1 sur le registre disable permet de déactiver l'interruption. Ecrire un 0, n'a aucun impacts sur l'intérruption demandé.
+Séparer les registres Enable et Disable permet d'activer ou de déactiver les interuptions sans affecter les autres interruptions.
+Exemple : imaginons que je veux activer l'interuption avec l'ID = 32 je dois donc écrire dans le registre NVIC_ISER1[0] à 1.
+
+- Pending et nettoyage d'interruption.
+Si une interruption est demandé, son pending bit est setté si le processeur ne peux y accéder immédiatement. Ecrire 1 sur le Un-pending bit permet de retirer l'interruption de la pending list.
+Quand une interruption est déactivé mais que le pending bit a déjà été setté, l'interruption reste active, et elle est exécuté une dernière fois avant déactivation.
+
+- Trigger an interrupt:
+Mettre le software trigger bit à 1 permet d'activer l'interruption demandée. Le processeur va appeler l'ISR correspondant.
+
+## Enable and Disable Peripheral Interrupts
+Nous avons vu que le registre capable d'activer ou de déactiver une interruption est le registre NVIC_ISERx.
+Chaques bits dans le registre ISER peux activer une interruption périphérique.
+Par exemple sur STM32L nous avons seulement 84 interruptions (non-système).
+En reprenant la table des vecteurs ci dessus. 
+Imaginons que nous souhaitons activer le WWDG (Watchdog) : Il faudra alors mettre le registre NVIC_ISER0[0] = 1.
+Pour l'interruption TIM2 qui porte le numéro 28 il faudra setter le bit NVIC_ISER0[28] = 1.
+Pour l'interruption SPI2 qui porte le numéro 36 il faudra setter le bit NVIC_ISER1[4] (32+4) à 1.
+
+On notera que tout les registres font 32 bits peuvent être en little ou big endian et que l'addresse de l'ISER1= addr of ISER0 + 4
+
+On pourrait dans ce cas écrire une fonction pour activer les interruptions qui ressemblerait à :
+```
+void Enable_Interrupt(int IRQn)
+{
+	int WordOffset = IRQn >> 5;	// Word offset IRQn / 32
+	BitOffset = IRQn & 0x1F;	// IRQn mod 32
+	NVIC->ISER[WordOffset] = 1 << BitOffset; //Enable interrupt
+}
+```
+
+Si le TIMER5 portait le numéro 50 on pourrait aussi l'activer en faisant :
+```
+NVIC->ISER[1] = 1 << 18
+```
+
+De la même façon on pourrait écrire une fonction pour déactiver les interruptions :
+```
+void Disable_Interrupt(int IRQn)
+{
+	int WordOffset = IRQn >> 5;	// Word offset IRQn / 32
+	BitOffset = IRQn & 0x1F;	// IRQn mod 32
+	NVIC->ICER[WordOffset] = 1 << BitOffset; //Enable interrupt
+}
+```
+
+## Interrupt Priority
+"Lower Priority valie means higher Urgency."
+La priorité détermine l'ordre des interruptions par ordre de priorité.
+Chaques interruption possède son register "priorité d'interruption" (NVIC_IPRx) qui a une taille de 8 bits.
+Dans ce registre il y a deux valeurs à mettre : la valeur "preemption priority number" et "sub-priority number". Une valeur basse veut dire une priorité plus grande.
+La priorité avec la valeur 0 représente l'interruption la plus prioritaire.
+
+De manière générale, une interruption périphérique possède une valeur de priorité positive là ou les interruptions systèmes peuvent être négatifs. 
+La preemtion est une technique largement utilisé pour traiter le caractère urgent d'une interruption. 
+Il y a un système de premptions au niveau des interruptions.
+
+Quand les processeurs Cortex-M utilise 8 bits pour stocker la valeur de priorité, les processeurs STM32L utilisent seulement 4 bits. (Ranging from 0 to 15)
+Pour un cortex-M différent on peut avoir d'autres valeurs.
+Si je prend l'exemple du processeur STM32F401RE on a 16 niveau de priorité (8 bits):
+
+![Interrupt priority register](interrupt_priority_register.png)
+
+
+
 
 ## Le DMA
 L'accès direct à la mémoire (en anglais DMA pour Direct Memory Access) est un procédé informatique où des données circulant de, ou vers, un périphérique sont transférées directement par un contrôleur adapté vers la mémoire principale de la machine, sans intervention du microprocesseur si ce n'est pour lancer et conclure le transfert.
@@ -1042,6 +1312,9 @@ NVIC	Nested Vectored Interrupt Controller
 PBS	Product Breakdown Structure
 JTAG Joint Test Action Group
 OWASP Open Web Application Security Project (non-profit initiative to improving the security of web applications) : permet de corriger des risques de sécurités dans son code grâce à des outils : tel que Klocwork.
+EXTI	External Interrupt
+SVC		Software interrupt
+ISR Interrupt Service Routine
 ```
 
 # Références :
