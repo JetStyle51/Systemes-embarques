@@ -735,19 +735,355 @@ LCKR: Lock Register
 Pour plus d'informations chercher les informations dans le Reference Manual du processeur.
 
 ## Les Timers
+Les timers sont des composants hardwares spéciaux qui fournissent des timestamps très précis, permettent de mesurer des intervals de temps, et d'effectuer des événements périodiquements pour de l'hardware ou du software.
+Dans la suite nous utiliserons les timers pour mesurer la longueur du pulse sur des signaux d'entrées (input capture) ou encore la génération de waveform de sortie (output compare et PWM)
 
-Tout les timers dans tout les micro-contrôleur ont :
-- Une horloge.
-- Un Prescaler pour diviser la fréquence de l'horloge.
-- Un compteur pour stocker la valeur du nombre de ticks. (TIMx_CNT)
-- Un registre d'auto-reload pour interrargir avec le compteur. (Comparaison, reload ...) (TIMx_PSC)
-Par exemple si l'autoreload register est égale à 36, lorsque le compteur dépasse 36 il revient à 0.
+### Timer Organization and Counting Mode
+Un timer est un composant hardware indépendant qui permet d'incrémenter ou de décrémenter un compteur à chaques cycle d'horloge. Le compteur tourne continuellement jusqu'à sa déactivation. 
+Le compteur recommence son cycle dès qu'il atteint la valeur 0 lorsqu'il est en mode décrémentation.
+Il peut aussi recommencer son cycle s'il atteint une valeur défini lorsque le compteur s'incrémente.
 
-![timer](timer.png)
+Le softwware permet de selectionner la fréquence du timer, donc le timer est configurable pour tourner à une période désirée.
 
-Ce dernier se sert du prescaler et de l'horloge pour s'incrémenter : l'autoreload permet de remettre la valeur à 0 comme le montre l'exemple ci dessous :
+Si un timer fonctionne comme "output compare", le comparateur compare systématiquement la valeur du compteur avec une constante donnée par le software.
+Il génère en fonction une sortie ou une interruption si les deux valeurs sont égales.
+Le software permet de configurer la valeur de la constante pour controler le timing des sorties ou des interruptions.
 
-![timer2](timer2.png)
+Si un timer fonctionne comme "input compare", l'hardware log la valeur du compteur dans un registre spécial appelé (CCR) et génère une interruption quand l'événement voulu se passe.
+Typiquement, l'interrupt handler a besoin de copier le registre CCR vers un buffer utilisateur pour enregistrer les événements passé. Ensuite le software calcule la différence entre 2 valeurs loggé et trouve le temps passé entre deux événements.
+
+Un compteur d'un timer hardware a 3 modes de comptages : le mode "up-counting", le mode "down-counting", et le mode "center-aligned counting" .
+- Le mode "up-counting" commence à compter à partir de 0 jusqu'à une valeur d'une constante puis recommence à partir de 0. Le software permet de setter la valeur de la constante et le stock dans un registre spécial appelé (ARR) pour auto-reload register.
+Par exemple si le registre ARR est à 4, le compteur va prendre les valeurs 0,1,2,3,4,0,1,2,3,4,(...) jusqu'à la déactivation du timer.
+- Le mode "down-counting", le compteur commence à la valeur de l'ARR et compte jusqu'à 0. Et recommence à la valeur de l'ARR. Par exemple si l'ARR vaut 4 on aura : 4,3,2,1,0,4,3,2,1,0,(...) jusqu'à la déactivation du timer.
+- Le mode "center-aligned counting", qui lui fait un "up-counting" puis un "down-counting" alternativement. Par exemple si l'ARR vaut 4 on aura : 0,1,2,3,4,3,2,1,0 (...) jusqu'à déactivation du timer.
+
+Le compteur du timer forme en faites un signal triangulaire ou un signal à dent de scie. La période était controllé par la fréquence de l'horloge du compteur et de la valeur stocké dans le registre ARR.
+Pour un compteur "up-counting" et "down-counting", la période du signal à dent de scie est donnée par la formule :
+
+` Counting period = (1+ARR) * 1/fclk_cnt`
+
+Pour un compteur "center-aligned counting" , la période du signal triangulaire est donnée par la formule :
+
+` Counting period = 2 * ARR * 1/fclk_cnt`
+
+Le compteur d'un timer possède deux événements : overflow et underflow.
+Dans le mode "up-counting", l'overflow est atteint lorsque le compteur est remis à 0.
+Dans le mode "down-counting", l'overflow est atteint lorsque le compteur atteint la valeur de ARR.
+Dans le mode "center-aligned counting", l'overflow et l'underflow est atteint alternativement 0 et ARR.
+
+Quand on utilise un timer pour mesurer une grande différence de temps entre deux événements, le soft doit considérer que le underflow et l'overflow pour éviter de sous estimer la différence de temps.
+Le timer handler peut vérifier en vérifiant les flag du timer status register pour compter le nombre d'overflow et de underflow.
+
+### Compare Output
+Le compteur du timer (CNT) est une valeur encodée sur 16 bits. Le registre de capture/compare (CCR) garde la valeur qui est comparé avec la valeur du compteur.
+Dans le STM32L, 4 canaux de sorties partagent le même compteur de timer. Malgrès que le timer compares la valeur du compteur avec 4 registres CCR simultanément et génères 4 sorties indépendantes basés sur cette comparaison.
+L'horloge permet de comparer le compteur du timer. (CLOCK_CNT), ce dernier peut être ralenti par la valeur d'une constante appelé prescaler pour générer une sortie qui s'étend sur une longue période.
+
+`fclock_cnt = fclock_psc / (Prescaler + 1)`
+
+Une valeur importante de Prescaler  permet de réduire la résolution du timer, mais réduit les occurences d'overflow et l'underflow ce qui améliorre les performances énergétiques.
+Plusieurs horloges peuvent controler les timers : ces horloges inclus des mécanismes internes que sont le processeur, l'external crytal oscillators et certain signaux internes comme la sortie d'un autre timer.
+Les horloges externes sont préférés aux horloges internes car les horloges externes sont plus précises.
+
+![Timer_block_diagram](Timer_block_diagram.png)
+
+#### Setting Output Mode
+Quand la valeur du timer counter (CNT) est égale au compare value register (CCR), le canal de sortie (OCREF) est programmable. La sortie peut avoir différences valeurs, cela dépend de la sortie du compare mode (OCM)
+
+| Output Compare Mode (OCM)  | Timer Reference Output (OCREF)         |
+| :--------------- |:---------------:|
+| Timing mode (0000)  |   Gelé        |
+| Active mode (0001)  | Logique haute si CNT = CCR             |
+| Inactive Mode (0010)  | Logique basse si CNT = CCR          |
+| Toggle Mode (0011)  | Toggle si CNT = CCR          |
+| Force Inactive Mode (0100)  | Forcer la logique à bas (toujours à bas)          |
+| Force Active mode (0101)  | Forcer la logique à haut (toujours à haut)          |
+| PWM output mode 1 (0110)  | Si le mode est upcounting : Logique à haute si CNT < CCR sinon logique à bas , Si le mode est downcounting, Logique haute si CNT <= CCR , sinon logique à bas         |
+| PWM output mode 2 (0111)  | Si le mode est upcounting : Logique à haut si CNT >= CCR sinon logique à bas , Si le mode est downcounting, Logique haute si CNT > CCR, sinon logique à bas         |
+
+La sortie du mode active ou le mode inactive produisent respectivement une logique haute ou une logique basse quand le compteur atteint la valeur du CNT.
+Le mode Toggle inverse la sortie quand CNT vaut CCR. Ce qui produit une sortie haute puis basse, basse puis haute alternativement.
+Le mode Force inactive mode et active mode permet de garder respectivements les niveaux à bas et à haut.
+
+Dans les circuits numériques, il y a deux logiques possible : haut et bas. Le software permet de changer la représentation de la logique pour la sortie de chaques timer indépendaments par programmation de la polarité sur le output polarity bit in the control register CCER.
+Quand la polarité est mise à 0, le mode actif correspond à une sortie qui est en "high voltage".
+
+|   | Active High signal         | Active Low Signal         |
+| :--------------- |:---------------:| :---------------:|
+| Logique haute(1)  |   High Voltage        | Low Voltage |
+| Logique Basse(0)  | Low Voltage             | High Voltage |
+
+Le canal du timer peut avoir deux sortie, la sortie principale OC et son complémentaire OCN qui est un ou-exclusif du canal de référence. Qui correspond au bit de polarité du registre CCER.
+Le bit CCP et CCNP dans le registre CCER sont respectivements les bits de polarité de OC et OCN.
+
+Si seulement OC et OCN sont activés :
+
+```
+OC = OCREF + polarity bit for OC
+OCN = OCREF + polarity bit for OCN
+```
+
+Si les deux OC et OCN sont activés :
+
+```
+OC = OCREF + Polarity bit for OC
+OCN (not OCREF) + Polarity bit for OCN
+```
+
+La logique "high active" est toujours utilisé pour OCREF. Cependant, OC et OCN ne peuvent pas être active en même temps sur active high ou active low. Cela dépend du bit de polarité.
+Si le but de polarité est à 0, la sortie du canal correspondant est en active high. Sinon elle est en active low.
+
+Si les interruptions des timers sont activés, l'interrption est appelée quand le CNT = CCR, ou quand le CNT a un overflow ou un underflow. L'ISR doit vérifier quel est le status du timer status register pour savoir quel est l'événement qui vient d'arriver.
+L'update interrupt flag (UIF) est setté en cas d'overflow ou d'underflow, et le flag compare interrupt flag (CCIF) est setté quand CNT = CCR.
+
+Une interruption DMA peux aussi être généré pour charger la valeur stocké dans la mémoire dans les registres ARR et CRR automatiquement. (Se référer au chapitre DMA).
+
+![Timer_Output_compare.jpg](Timer_Output_compare.jpg)
+
+#### Example of Toggling LED with Output Compare
+Dans cette section nous allons utiliser le mode output compare mode pour faire le clignotement d'une LED. Attaché au PIN PB13.
+
+Chaques broches GPIO peux faires plusieurs fonctionalités hardware. Les fonctions différes entre les cartes et les manufactureurs, mais aussi entre les broches elle même. Dû à la complexité de la carte et au cout de fabrication,
+c'est impossible qu'une broche supporte toutes les fonctions. Dans le cas de notre broche nous pouvons trouver les alternatives fonctions. Dont  le TIM2_CH1 qui va nous permettre de faire un toggle de la led.
+
+![Alternate_function](Alternate_function.png)
+
+Supposons que la clock du système soit à 80 MHz, et que cette dernière soit notre clock système qui pilote le TIMER 2.
+Le calcul suivant nous permet donc de calculer le prescaler qui va nous permettre de déscendre le timer à 2 KHz :
+
+` fclk_cnt = fclk_psc / (Prescaler + 1)`
+donc
+
+` Prescaler = (fclk_psc / fclock_cnt) - 1 = 80 MHz / 2KHz - 1 = 40000 - 1 = 39999`
+
+Ainsi pour allumer et éteindre la LED toutes les secondes nous devons placer notre ARR à 1999 car la fréquence d'horloge est à 2KHz.
+Le timer compte ainsi de 0 à 1999, donc 2000 cycles pour chaques périodes. Le registre CCR peut être alors placé entre 0 et 1999.
+
+L'implémentation C suivante permet par software de configurer le TIM1_CH1N (La sortie complémentaire du canal 1 du timer 1) comme compare-output et de faire un toggle de la LED connecté sur PE8 toutes les secondes.
+```
+int main()
+{
+
+	System_Clock_Init(); // System clock = 80MHz
+	
+	RCC-> AHB2ENR |= RCC_AHB2ENR_GPIOEEN; // Enable GPIOE clock
+	
+	// Set mode of pin 8 as alternate function
+	// 00 = Input 01 = Output, 10 = Alternate function, 11 = Analog
+	GPIOE->MODER &= ~(3UL << 16); // Clear bit 17 et 16
+	GPIOE->MODER |= 2UL << 16 // Set mode as 10
+	
+	// Select alternative function (TIM1_CH1N)
+	GPIOE->AFR[1] &= ~(0xF); // ARF[0] for pin 0-7 , ARF[1] for pin 8-15
+	GPIOE->AFR[1] | 1UL; //TIM1_CH1N defined as 01
+	
+	// Set I/O output speed value at low
+	// 00 : Low, 01 Medium, 10 Fast, 11 High
+	GPIOE->OSPEEDR &= ~(3UL<<16);
+	
+	// Set pin PE8 as no pull-up/pull-down
+	// 00 for no pull up pull down
+	GPIOE->PUPDR &= ~(3UL<<16);
+	
+	// Enable Timer1 Clock
+	RCC->APN2ENT |= RCC_APB2ENR_TIM1EN;
+	
+	// Counting direction : 0 upcounting, 1 downcounting
+	TIM1-> CR1 &= ~TIM_CR1_DIR;
+	
+	// Clock prescaler
+	TIM1->PSC = 39999;
+	
+	// Auto reload register
+	TIM1->ARR = 2000 -1;
+
+	// CCR can be any value between 0 and 1999
+	TIM1->CCR1 = 500;
+	
+	// Main output enable (MOE) 0 Disable 1 Enable
+	TIM1->BDTR |= TIM_BDTR_MOE;
+	
+	// Clear output compare mode bits for channel 1
+	TIM1->CCMR1 &= ~TIM_CCRM1_OC1M;
+	
+	/// Select Toggle Mode (0011)
+	TIM1->CCMR1 |= TIM1_CCMR1_OC1M_0 | TIM_CCMR1_OC1M_1;
+	
+	// Select output for channel 1 complementary output
+	TIM1-> CCER &= ~TIM_CCER_CC1NP; // Select active high
+	// Enable output for channel 1 complementary output
+	TIM1->CCER |= TIM_CCER_CC1NE;
+	
+	// Enable Timer 1
+	TIM1->CR1 | TIM_CR1_CEN;
+	
+	while(1); //Dead loop
+}
+```
+	
+Un autre exemple de output compare est disponible dans le dossier STM32.
+
+#### Timer Update Events
+
+Un Update Event (UEV) est généré à chàque fois qu'on atteint l'overflow dans le mode upcounting, et à chaques underflow dans le downcounting. Sur l'overflow et le underflow pour le center-counting.
+
+Ainsi la période de l'UEV est :
+
+` UEVPeriod = (1+ARR) * (1+Prescaler) * 1/ fclk_cnt`
+
+Les événements UEV ont 3 objectifs :
+- Généré une trigger output (TRGO) ou sortie de déclenchement pour d'autres modules internes que sont les timers DMA, ADC et DAC.
+- Permettre l'update des registres ARR, PSR, et CCR en prenant effet immédiatement, si le buffering (aussi appelé preload) mécanisme est activé.
+Si le channel preload enable bit (OCPE) dans le registre CCMR1 et que l'auto-reload enable bit (ARPE) dans le registre CR1 est setté, le mécanisme de preload est activé.
+- Générer une interruptions timer si l'update interrupt flag bit (UIF) du control register CR1 est setté. L'interruption est envoyé au NVIC. En réponse, le processeur execute la routine d'interruption (ISR).
+
+Le Software peut déactiver l'UEV en mettant à jour l'udpate disable bit à 0(UDIS) dans le registre CR1. Dans ce cas les updates events ne sont pas générés.
+
+Dans l'exemple ci dessous le software utilise le timer update event pour atteindre une précision hardware sur le délais.
+A 30°C, le MSI et le HSI peut atteindre une précision de +-0.6%.
+Supposons que le MSI est setté à 4MHz et qu'il pilote le timer. Le prescaler est setté à 3999 et le compteur est en mode upcounting. Donc le timer counter est incrémenté chaques ms.
+On selectionne le timer7 car ce dernier est un timer basic sans les fonctions avancés.
+Dans ce cas on réserve les timers avancés pour des usages plus compliqués.
+
+```
+void delay(uint16_t ms)
+{
+	if (ms == 0) // Sanity check
+	{
+	}
+	
+	//Enable timer7 clock
+	RCC->APB1ENR1 |= RCC_APB1ENR1_TIM7EN;
+	
+	TIM7-> CR1 &= ~TIM_CR1_EN; // Disable Timer7
+	TIM7-> SR = 0; // Clear status register
+	TIM7-> CNT = 0; // Clear counter
+	TIM7-> PSC = 3999;	//4MHz/(1+3999) = 1Khz
+	TIM7 -> ARR = ms - 1; // ARR + 1 cycle
+	TIM7-> CR1 |= TIM_CR1_EN; // Enable Timer7
+	
+	while( (TIM7->SR & TIM_SR_UIF) == 0); // Loop until UIF is set
+}
+```
+
+L'exemple ci dessous compte le nombre d'overflow atteint dans le mode upcounting. Si le flag UIF dans le timer status register (SR) est setté, l'interruption timer incrément le compteur d'overflow and nettoie le flag UIF pour prevenir une nouvelle execution de l'ISR.
+
+```
+volatile uint32_t overflow = 0;
+
+int main(void) {
+	//Init
+	...
+	
+	// Select counting direction : 0 upcounting
+	TIM1->CR1 &= ~TIM1_CR1_DIR
+	
+	// Enable update interrupt
+	TIM1->DIER |= TIM_DIER_UIE;
+	
+	// Enable Timer4 interrupt on NVIC
+	NVIC_EnableIRQ(TIM1_IRQn);
+	
+	//Enable the counter
+	TIM1->CR1 | TIM_CR1_CEN;
+	
+	while(1);
+}
+
+void TIM1_IRQHandler(void)
+{
+
+	// Check whether an overflow event has taken place
+	if ((TIM1->SR & TIM_SR_UIF) != 0) {
+		overflow++;
+		TIM1-> SR &= ~TIM_SR_UIF;
+	}
+}
+```
+
+Dans cette exemple la variable `overflow` est déclarée en volatile. Pour informer le compilateur qu'aucune optimisation ne doit être faites sur cette variable.
+Sans l'optimisation il est possible que le compilateur réutilise incorrectement la variables. Car l'IRQ n'est pas appelé par le software et donc pense que la variable ne change jamais.
+
+### Les sorties PWM
+Pulse width modulation(PWM) est une technique numérique pour controler la valeur du variable analogique.
+Les PWM utilisent des signaux rectangulaire pour rapidement évoluer au niveau du voltage. 
+En l'activant et déactivant rapidement on peut ainsi modifier la valeur moyenne lue et obtenir une autre valeur de voltage en sortie.
+Bien que la sortie soit à 5V ou à 0V de base, la moyenne sur un temps donné peut se trouver entre les deux.
+
+Spécifiquement, le pourcentage de temps passé dans un état est proportionnel à la valeur moyenne de la sortie en volt.
+Par conséquent, quand le software change les durées des états, l'output voltage peut être utilisé pour emuler un signal analogique.
+
+Les PWM sont très utilisé dans les applications, particulièrement pour contrôler la vitesse d'un moteur et pour la mesure du couple, pour l'encodement digital et les télécommunications, les convertisseurs DC vers DC, les amplificateurs audios.
+Dans cette section nous allons utiliser le PWM pour controler l'intensité d'une LED.
+
+Nous devons sélectionner la variation de fréquence PWM minutieusement afin d'éviter les impacts sur les applications. Par exemple le changement de fréquence sur l'intensité d'une LED doit être inférieur à 120 Hz pour éviter l'effet vacillant pour que un humain puisse le voir.
+
+La valeur moyenne d'un PWM est basé sur un signal à dent de scie et une valeur constante de référence, tout ceci est linéairement proportionnel au duty cycle.
+
+Le temps de cycle (duty cycle) est défini ainsi :
+
+
+`duty cycle = (pulse on time (Ton) / pulse switching period (Ts)) * 100`
+
+Ou 
+
+` pulse switching period (Ts) = 1/PWM switching frequency`
+
+![Duty_cycle](https://i.ytimg.com/vi/ERMAPLVG8Z8/maxresdefault.jpg)
+
+En modifiant le duty cycle, le software peut controler la valeur moyenne. Dans l'exemple de la LED la luminosité est déterminé par le PWM duty cycle. 
+![Duty_Cycle_2](https://www.researchgate.net/publication/268819772/figure/fig1/AS:669461321371697@1536623425845/Pulse-width-modulation-from-the-comparison-of-a-sawtooth-function-and-a-reference-voltage.png)
+
+Le signal PWM de sortie dépend de 3 facteurs :
+- La comparaison entre le registre CNT et la valeur de référence donné dans le compare and capture register (CCR).
+- Le mode PWM output mode
+- Le bit de polarité
+
+Il y a 2 modes PWM qui sont opposé l'un l'autre :
+- PWM Mode 1: Si le compteur est plus petit que la référence, le timer reference output (OCREF) est dans un état haut. Sinon dans un état bas.
+- PWM Mode 2: Si le compteur est plus grand que la référence, le timer reference output (OCREF) est dans un état haut. Sinon dans un état bas.
+
+OCREF est une sortie interne. Qui doit toujours utiliser une logique d'état haut. Cependant la sortie actuelle (OC ou OCN) peut être active high ou active low.
+- Dans le mode active high, un haut voltage corrrespond à une logique haute, et un bas voltage à une logique basse.
+- Dans le mode active low, un haut voltage correspond à une logique basse, et un bas voltage à une logique haute.
+- La selection de ce mode se fait via le bit de polarité.
+
+Pour résumé, la sortie PWM(OC ou OCN) est obtenue par le mode et le bit de polarité.
+Les formules suivantes permettent de calculer la période du PWM :
+
+Pour un mode upcounting ou downcounting :
+
+` PWMPeriod = (1+ARR) * (Clock Period of Timer)/(1+ Prescaler)`
+
+Pour un mode center-counting-mode :
+
+` PWMPeriod = 2 * ARR * (Clock Period of Timer)/(1+ Prescaler)`
+
+Pour le PWM duty cycle, suivant le mode du PWM et le bit de polarité, le duty cycle de la sortie principale OC en mode upcounting ou downcounting est :
+
+` Duty cycle = CRR / (ARR + 1) `
+
+ou de son complémentaire 
+
+` Duty cycle = 1- CRR / (ARR + 1)`
+
+Pour le mode center-counting on a :
+
+` Duty cycle = (CRR / ARR) `
+
+ou de son complémentaire
+
+` Duty cycle = 1 - (CRR / ARR) `
+
+Dans le mode center aligned , quand le registre CCR est à 0 ou le registre ARR, OCREF est 1 ou 0. Cela dépend du mode PWM.
+
+#### PWM Alignement
+"Toutes les sorties PWM d'un même timer ont les mêmes périodes"
+Un timer possède plusieurs canaux comme vue plus haut.
+Tout les canaux partagent le même tumer counter et le registre ARR.
+Ainsi, tout les signaux PWM produit par le même timer ont les mêmes périodes.
+Cependant leurs duty cycles peuvent être différent car chaques canaux a un CCR différent.
 
 ## UART
 
