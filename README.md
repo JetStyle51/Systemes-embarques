@@ -1,6 +1,8 @@
 # Systèmes-embarqués
 
 Ce dépôt regroupe des outils / documentation / tutoriel et codes qui peuvent être utiles pour un système embarqué.
+Je propose dans ce dépot d'expliquer les systèmes embarqués simplement et plus en détail grâce à mes connaissances et à divers tutoriel disponible sur le web.
+: vous pouvez suivre cette chaine Youtube qui vous permettra aussi d'évoluer rapidement : https://www.youtube.com/channel/UCY0sQ9hpSR6yZobt1qOv6DA/videos
 
 ## Introduction aux systèmes embarqués :
 
@@ -260,12 +262,12 @@ Ce qui permet de trouver le bon compromis entre la taille du code et les perform
 
 ### Le jeu d'instruction Arm
 
-![ARM Instruction Set Encoding](https://developer.arm.com/documentation/ddi0406/c/Application-Level-Architecture/ARM-Instruction-Set-Encoding?lang=en)
+[ARM Instruction Set Encoding](https://developer.arm.com/documentation/ddi0406/c/Application-Level-Architecture/ARM-Instruction-Set-Encoding?lang=en)
 
 
 ### Le jeu d'instruction Thumb
 
-![Thumb Instruction Set Encoding](https://developer.arm.com/documentation/ddi0406/c/Application-Level-Architecture/Thumb-Instruction-Set-Encoding?lang=en)
+[Thumb Instruction Set Encoding](https://developer.arm.com/documentation/ddi0406/c/Application-Level-Architecture/Thumb-Instruction-Set-Encoding?lang=en)
 
 <div id='clang'/>
 
@@ -1012,8 +1014,280 @@ Si je prend l'exemple du processeur STM32F401RE on a 16 niveau de priorité (8 b
 
 ![Interrupt priority register](interrupt_priority_register.png)
 
+## Global Interrupt Enable and Disable
+En plus de la configuration du NVIC pour configurer individuellement les interruptions, le processeur cortex-M nous permet d'activer ou de déactiver des groupes d'interruption en changeant les registres d'état des interruptions du processeur (CPS)
+Ainsi nous utilisons pour cela le priority mask register (PRIMASK) pour activer ou déactiver les interruptions (excepté hardfault et le non-maskable-interrupt (NMI)).
+De plus nous utilisons le fault mask register (FAULTMASK) pour activer ou déactiver les interruptions excepté le NMI.
+| Instruction  | Action          | Equivalent          |
+| :--------------- |:---------------:|:---------------:|
+| CPSID i  |   Déactiver les interruptions & configurable fault handler        | MOVS r0,#0 MSR PRIMASK, r0 |
+| CPSID f  | Déactiver les interruptions et tout les fault handler             | MOVS r0,#1 MSR FAULTMASK, r0 |
+| CPSIE i  | Activer les interruptions & configurable fault handler           | MOVS r0,#0 MSR PRIMASK, r0 |
+| CPSIE f  | Activer les interruptions et tout les fault handler          | MOVS r0,#1 MSR FAULTMASK, r0 |
+| N/A  | Déactiver les interruptions avec les priorités 0x05-0xFF          | MOVS r0,#5 MSR BASEPRI, r0 |
 
+Quand le base prioriy mask register (BASEPRI) n'est pas null, tout les interruptions plus haute que la priorité supérieur ou égale à BASEPRI sont déactivé.
+Dans ce cas, nous disons aussi que tout les interruptions inférieur à BASEPRI sont non-maské. (cad Active).
+Plus la valeur de la priorité est grande moins est l'urgence de l'interruption.
 
+Dans la table des équivalences données ci dessus. Les MRS transfèrent la valeur des purposes register dans les special purpose regiter. Notons que les instructions MOV ou MOVS ne peuvent pas accéder à ces registres.
+
+## System Timer
+Le tick système timer (SysTick) est un simple compteur décroissant 24 bits qui produit un petit quantum de temps fixe. Le Soft utilise le SysTick pour créer des delays ou ou produire des interruptions périodique et executer un traitement de façon répété dans le temps.
+- Le compteur SysTick compte de facon décroissante d'une valeur N-1 jusqu'à 0. Le processeur génère une interruption lorsque le SysTick atteint la valeur 0.
+- Après avoir atteint la valeur 0, Le SysTick charge la valeur stocké dans un registre spécial appelée le SysTick Reload Register et continue de compter en décroissant à nouveau.
+- Le SysTick ne s'arrête jamais de compter même quand le processeur est en mode pause (debug session). Les interruptions continuent même en mode debug.
+
+Un autre usage du SysTick timer est de créer un Timer qui pourrait être utile aux CPU équipé d'un RTOS. Quand plusieurs tâches tournent de façon concurrente. Le processeur alloue  chacunes des tâches du temps CPU suivant la politique d'ordonnancement choisi (Preempif ou Round Robin).
+Pour faire cela, le processeur utilise le timer hardware pour générer des interruptions à interval régulier. Ces interruptions informent le processeur d'arrêter la tâche en cours d'execution, en sauvegardant le contexte de la tâche en cours d'execution dans la stack, et selectionne la nouvelle tâche qui se trouve dans la queue.
+Quand le timer SysTick est utilisé au niveau du système, le processeur peut parfois protéger le SysTick d'être modifié par software dans le mode "unprivileged mode".
+
+Il y a 4 registres 32 bits pour configurer le system timer. Leurs addresse mémoires données ci dessous sont toujours les mêmes pour les processeurs ARM Cortex-M mais le nom de ces registres varient suivant le manufactureur.
+![SysTick_Timer_register](SysTickTimer_register.png)
+
+Détaillons ces registres dans les chapitres suivants :
+
+### SysTick CTRL Register
+
+![SysTickTimer_CTRL_register](SysTickTimer_CTRL_register.png)
+
+- La CLKSource permet de prendre la fréquence de AHB divisé par 8 ou bien la valeur du processor clock.
+La sélection de la clock (MSI,HSI,PLLCLK,HSE) est faites par le registre RCC_CFGR via un multiplexeur.
+Dans l'exemple ci dessous on utilise directement le processor Clock.
+![SysTickTimer_CTRL_register_Clock_Source](SysTickTimer_CTRL_register_Clock_Source.png)
+- TICKINT : Permet d'activer les interruptions sur le SysTick.
+0 : Permet de déactiver l'interruption lorsqu'on atteint la valeur 0.
+1 : Permet d'activer l'interruption quand on atteint la valeur 0.
+- ENABLE :
+Permet d'activer (1) le compteur ou de le déactiver (0).
+
+Ainsi pour avoir une interruption sur le SysTick il faut :
+1. Mettre le bit  TICKINT à 1 pour activer l'interruption
+2. Activer le SysTick interrupt dans le NVIC vector. (activé par défault dans le NVIC)
+3. Mettre le flag ENABLE à 1 pour activer le compteur.
+
+- COUNTFLAG permet d'indiquer quand un évenement spécial est arrivé.
+1 = Le compteur est passé de 1 à 0 depuis la dernière lecture de SysTick_CTRL
+0 = Le COUNTFLAG est néttoyé en lisant le SysTick_CTRL ou par écriture de SysTick_VAL.
+
+### SysTick LOAD Register
+Le registre LOAD permet de stocker la valeur à laquelle le SysTick va se remettre lorsqu'il atteint la valeur 0.
+
+Si l'interruption SysTick a besoin d'être appelée tout les N clock pulses, le software doit configurer ce registre à la valeur N-1.
+Ce register supporte une valeur sur 24 bits.
+Par exemple si l'application a besoin de générer une SysTick interrupt tout les 100 clocks pulse, le SysTick Clock LOAD doit être setté à 99.
+![SysTickTimer_CTRL_register](SysTickTimer_LOAD_register_Clock_Source.png)
+
+### SysTick VAL Register
+Quand le SyTick est activé, le compteur 24 bits est copié dans le registre SysTick_VAL.
+Cependant la valeur de ce registre est arbitraire lorsqu'on effectue un reset.
+
+Le processeur décrémente automatiquement le registre à chaques pulse envoyé par le timer.
+Ecrire une valeur sur ce registre remet ce registre à 0. (Redémarre le TIMER à la valeur SysTick_LOAD) au prochain pulse.
+Lire une valeur sur ce registre permet d'afficher la valeur courante du SysTick.
+![SysTickTimer_CTRL_register](SysTickTimer_VAL_register_Clock_Source.png)
+
+### SysTick CALIB Register
+Permet de calibrer le SysTick : c'est un registre en lecteur seul qui nous permet de voir la calibration de notre systick.
+- La valeur TENMS stocké dans ce registre est un prérequis pour générer un interval de temps de 10ms (cad un timer à 100Hz).
+Le Software peut l'utiliser comme une horloge de référence externe de grande précision pour calibrer le système timer. Si la valeur TEMS vaut 0, nous pouvons calculer sa valeur à partir de la fréquence de la clock qui pilote le compteur du timer.
+La valeur TEMNS donne une valeur façon convenable pour générer un interval de temps particulier.
+Par exemple pour générer un SysTick interrupt tout les 1ms, nous pouvons setter le Systick_LOAD à TENMS/10.
+- Le FLAG SKREW indique si la valeur TENMS est exacte ou non. Si la valeur vaut 0, le champ TENMS ne peux pas générer exactement 10ms à cause d'une petite variation sur la fréquence de la clock.
+- Le FLAG NOREF indique si le processeur a implémenté une clock de référence.
+Si TENMS vaut 1. La clock de référence n'a pas été appliqué par le manufactureur.
+
+Exemple de calcul d'un interval system timer :
+Imaginons qu'on ai un SysTick_LOAD à 6. Si la clock du processeur est à 1MHz et que le Systick counter prend cette fréquence en horloge. Nous pouvons calculer la période d'interruption comme cela :
+`SysTick Interrupt period = ( 1 + SysTick_LOAD) * (1/ SysTick Counter Clock Frequency) = ( 1 + 6 ) * (1/1MHz) = 7us`
+
+![SysTickTimer_CTRL_register](SysTickTimer_CALIB_register_Clock_Source.png)
+
+Maintenant que nous connaissons tout les registres voyons comment programmer cela :
+On pourrait par exemple activer les interruptions SysTick en faisant :
+` *((volatile uint32_t *) 0xE000E010 |= 1UL << 2;`
+Mais ce n'est pas une façon convenable de le faire car difficile à comprendre et à lire.
+
+A la place nous pourrions utiliser une structure sur un block contigue et le mapper sur la mémoire physique.
+Comme nous l'avons vu le systick s'appui sur 4 regitres de 32 bits.
+Les addresses mémoires de ces registres sont convertis vers un pointeur variables qu'on peut déclarer dans une structure.
+```
+#define __I volatile const // define as read only
+#define __O volatile // defines as write only
+#define __IO volatile // allow both read and write
+
+// Memory mapping structure for SysTick
+typedef struct {
+__IO uint32_t CTRL;
+__IO uint32_t LOAD;
+__IO uint32_t VAL;
+__I uint32_t CALIB;
+} SysTick_Type;
+
+#define SysTick_BASE 0xE000E010
+
+#define SysTick ((SysTick_Type *) SysTick_BASE)
+```
+
+En partant de ce code on peut ainsi une écrire une fonction pour initialiser notre SysTick : Nous pouvons aussi écrire une fonction delay personalisé.
+La fonction ci dessous `SysTick_Config()` initialise le systick et génère des interruptions à interval régulié. Le paramètre d'entrée ticks est égale à l'interval de temps du time divisé par la période de la clock.`
+Ci dessous l'utilisation du systick d'un STM32F401RE que nous utilisons qu'on incrémente plutôt que de décrémenter mais le cas d'usage est le même.
+
+```
+__STATIC_INLINE uint32_t SysTick_Config(uint32_t ticks)
+{
+  if ((ticks - 1UL) > SysTick_LOAD_RELOAD_Msk)
+  {
+    return (1UL);                                                   /* Reload value impossible */
+  }
+
+  SysTick->LOAD  = (uint32_t)(ticks - 1UL);                         /* set reload register */
+  NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
+  SysTick->VAL   = 0UL;                                             /* Load the SysTick Counter Value */
+  SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
+                   SysTick_CTRL_TICKINT_Msk   |
+                   SysTick_CTRL_ENABLE_Msk;                         /* Enable SysTick IRQ and SysTick Timer */
+  return (0UL);                                                     /* Function successful */
+}
+```
+
+Le SysTick interrupt Handler lui incrémente la valeur uwTick
+```
+/**
+  * @brief This function handles System tick timer.
+  */
+void SysTick_Handler(void)
+{
+  /* USER CODE BEGIN SysTick_IRQn 0 */
+
+  /* USER CODE END SysTick_IRQn 0 */
+   uwTick += uwTickFreq;
+  /* USER CODE BEGIN SysTick_IRQn 1 */
+
+  /* USER CODE END SysTick_IRQn 1 */
+}
+```
+
+La fonction Delay pourrait s'écrire par exemple :
+```
+__weak void HAL_Delay(uint32_t Delay)
+{
+  uint32_t tickstart = uwTick;
+  uint32_t wait = Delay;
+
+  /* Add a freq to guarantee minimum wait */
+  if (wait < HAL_MAX_DELAY)
+  {
+    wait += (uint32_t)(uwTickFreq);
+  }
+
+  while((uwTick - tickstart) < wait)
+  {
+  }
+}
+```
+
+Notons que la variable `uwTick` est du type `__IO uint32_t uwTick;` (volatile).
+Nous pourrions pousser l'analyse plus loin et analyser le code assembleur.
+
+## External Interrupt
+Les interruptions externes sont des interruptions qui sont instantiés par des périphériques externes ou des device externe au coeur du processeur.
+Comme des bouttons poussoirs ou des claviers. Ils sont très utiles car ils permettent au microcontroleur de moniter des signaux extérieurs efficassement et de répondre rapidement à des événements extérieurs.
+
+L'external interrupt controlleur possède 16 external interrupts, nommés EXTI0, EXTI1, ... , EXTI15.
+Chacuns de ces registres sont associés à un GPIO spécifique.
+Les broches GPIO avec le même numéro de broche dans tous les ports GPIO sont affectées à la même interruption externe.
+Dans d'autres mots, seules les broches avec le numéro de broche k peuvent être la source de l'interruption externe EXTI k.
+Par exemple : Le processeur map le GPIO PA0 vers EXTI0, PA1 vers EXTI1, PA2 vers EXTI2 etc ...
+
+De plus, il n'y a qu'une seule interruption externe sur toutes les broches avec le même numéro sur tous les ports GPIO.
+Par exemple, si la broche PA3 déclenche une interruption. Nous pouvons pas utiliser les broches PB3, PC3, PD3 ou PE3 comme source externe d'interruption.
+
+![External_Interrupt_event_line_mapping](External_Interrupt_event_line_mapping.png)
+
+Dans la figure ci dessus on voit que si on appui par exemple sur un boutton relié à la pin PA3, le voltage de PA3 passe à l'état haut. Le Software devrait donc configurer la broche PA3 en pull down en interne et donc avoir un PA3 en basse tension quand le boutton n'est pas appuyé.
+
+![Debounce_button](Debounce_button.png)
+
+Par exemple sur le schéma ci dessus (NUCLEO-F401RE) on retrouve le bouton avec un système de debounce qui permet d'éviter l'effet "rebond", avec en interne dans le processeur une résistance de pull-down configuré en software.
+
+L'external interrupt controller possède un moniteur pour monitorer les volts et donc de détecter un seuil. Ce moniteur hardware peut monitorer une broche GPIO.
+Le software peut selectionner le front montant, le front descendant ou les deux et déclencher une interruption sur les deux fronts. Pour une interruption sur PA3 l'interruption se trouve sur EXTI3.
+La requête d'interruption est envoyée au NVIC. Finalement le processeur répond avec l'appel de la routine d'interruption `EXTI3_IRQHandler()`.
+
+Expliquons alors comment configurer le software pour configurer un GPIO pin k et déclencher une interruption externe EXTI k.
+
+1. Activons l'horloge de SYSCFG et le port GPIO correspondant.
+2. Configurer le GPIO broche k en entrée.
+3. Mettre le registre SYSCFG external interrupt configuration register (SYSCFG_EXTICR) pour mapper le GPIO broche k vers l'interruption externe line k.
+4. Selection le front qui active l'interruption EXTI k. Peut être le front descendant, montant ou les deux. Ceci est programmé à travers les registres EXTI_RTSR1 ou EXTI_RTSR2 pour le front montant et EXTI_FTSR1 ou EXTI_FTSR2 pour le front descendant.
+5. Activer l'EXTI k en mettant le kième bit dans le registre EXTI interrupt mask register (EXTI_IMR1 ou EXTI_IMR2). Une interruption peut être seulement généré si le bit correspondant dans le registre interupt mask register est à 1.
+6. Activer l'interruption EXTI k sur le NVIC Controller avec NVIC_EnableIRQ.
+7. Ecrire l'ISR pour l'EXTI k. Le EXTI pending register (EXTI_PR1 ou EXTI_PR2) enregistre la source de l'interruption. Le nom de l'interruption est donnée dans la table des vecteurs d'interruption.
+8. Dans l'ISR, le soft a besoin de faire un clear sur le pending bit correspondant pour indiquer que l'interruption a bien été prise en comte. Il faut écrire un 1 sur le pending bit de l'interruption concerné.
+
+Voici un exemple pour activer une interruption sur PA3, cette dernière allumera la LED en PB8 par exemple :
+```
+void EXTI_Init(void) {
+	// Enable the SYSCFG Clock
+	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
+	
+	// Select PA.3 as the trigger source of EXTI 3
+	SYSCFG->EXTICR[0] &= ~SYSCFG_EXTICR1_EXTI3;
+	SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI3_PA;
+	SYSCFG->EXTICR[0] &= ~(Ox000F);
+	
+	// Enable rising edge trigger for EXTI3_IRQHandler
+	// Rising trigger selection register (RSTR)
+	// 0 : Disable , 1 : Enable
+	EXTI->RTSR |= EXTI_RTSR_RT3;
+	
+	// Disable falling edge trigger for EXTI3_IRQHandler
+	// Falling trigger selection register (FSTR)
+	// 0 : disable, 1 : enable
+	EXTI->FTSR &= ~EXTI_FTSR_RT3;
+	
+	// Enable EXTI3 Interrupt
+	//Interrupt mask register : 0 : masked 1: unmasked
+	// "Masked" means that processor ignores the corresponding interrupt.
+	EXTI->IMR1 |= EXTI_IMR1_IM3; // Enable EXTI line 3
+	
+	// Set EXTI priority to 1
+	NVIC_SetPriority(EXTI3_IRQn,1)
+	
+	// Enable EXTI3 interruot
+	NVIC_Enable IRQ(EXTI3_IRQn);
+}
+```
+
+Attention dans le codage de l'ISR une erreur courante est de ne pas nettoyer le pending flag après avoir traité l'interruption. Et peut par erreur pensait qu'une autre interruption est arrivée et répéter l'appel à l'interruption deux fois.
+Ici on fait le toggle d'une LED sur PB8 :
+
+```
+void EXTI3_IRQHandler(void) {
+	if ((EXTI->PR1 & EXTI_PR1_PIF3) == EXTI_PR1_PIF3) {
+	
+		// Toggle LED
+		GPIOB->ODR ^= 1<< 8;
+		
+		EXTI->PR1 |= EXTI_PR1_PIF3; // Write 1 to clear
+	}
+```	
+
+Les interruptions externe peuvent aussi monitorer les evénements interne lié au processeur, comme les alarmes RTC, COMP outputs, ou les événements de wakeup interne. Aussi, le software peut faire un trigger d'un événement en écrivant sur le EXTI software interrupt event register (EXTI_SWIER).
+
+## Software Interrupt
+Les signaux d'interruptions peuvent être généré par l'hardware, comme les timers et les autres périphériques hardware.
+Le software peut aussi générer des signaux d'interruption en mettant les interrupt pending registers à 1. Ou en utilisant des instructions spéciales.
+Il y a deux utilisations majeurs des interruptions software : les exceptions handling et les priviliged hardware access.
+
+- Exception Handling :
+Quand une condition d'exception arrive lors de l'execution du processeur, comme une division par 0, un illegal opcode, ou une addresse mémoire invalide, le processeur doit voir ces situations anormales et déclencher une action.
+Le processeur peut identifier deux types de fautes, y compris une division par 0 ou un accès mémoire non aligné.
+Si le software déclénche une division par 0, il génère ce qu'on appel une "trap", c'est à dire que le processeur appel le hard fault handler qui peut demander un redémarrage du système ou terminer dans une boucle infinie.
+
+- Privilege Hardware Access : Quand une application utilisateur tourne en mode unprivileged et nécéssite un accès au hardware, ceci est disponible seulement en mode priviliged. 
+Une instruction spéciale (Supervisor call) permet de passer du mode privilège au mode non privilège.
 
 ## Le DMA
 L'accès direct à la mémoire (en anglais DMA pour Direct Memory Access) est un procédé informatique où des données circulant de, ou vers, un périphérique sont transférées directement par un contrôleur adapté vers la mémoire principale de la machine, sans intervention du microprocesseur si ce n'est pour lancer et conclure le transfert.
