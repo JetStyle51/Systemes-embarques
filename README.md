@@ -302,15 +302,27 @@ Prenons par exemple de cas du STM32F401RE : (Cortex-M4)
 Le diagramme block ci dessus montre comment le coeur et les périphériques sont intégrés dans la puce.
 
 - Le coeur du processeur communique avec la mémoire flash (typiquement pour cela utilise une instruction mémoire), avec la SRAM (avec une instruction data), le DMA ou encore avec les GPIOs et le PHY via l'AHB bus matrix (aussi appelé crossbar switch).
-
 - La matrice de bus est un schéma d'interconnexion, qui permet des flux de données simultanés entre les composants connectés à la matrice de bus, fournissant ainsi une bande passante de communication élevée. La matrice de bus connecte des composants à haute vitesse, tels que le cœur du processeur, Flash, SRAM, contrôleurs DMA et PHY, ou encore les GPIOs.
-
 - Les périphériques sont connectés à la matrice de bus via des ponts qui permettent de lier : l'advanced high-performance bus (AHB) et le advanced peripheral bus (APB). Généralement l'AHB est utilisé là ou se trouve de grosses bandes passantes, et l'APB pour des bandes passantes plus petites.
 l'AHB et l'APB sont connecté via des ponts, qui met en mémoire tampon les données et les signaux de contrôle pour combler l'écart de bande passante entre les deux bus et s'assurer qu'il n'y a pas de perte de données.
-
 - Chaques broches GPIO possèdes de multiples fonctions. Le software pevent les modifier. Nous pouvons utiliser les GPIOs comme une entrée numérique, ou une sortie. On peut aussi faire de l'ADC, des communications séries, des fonctionalités liés aux timers etc ... Les alternates fonctions dépend de la carte.
-
 - La plupart des périphériques comme les timers, ADC et I2C sont connecté à l'APB.
+
+Mais qu'est-ce qu'un bus ?
+Un bus est un ensemble de fils physiques permettant de transférer des données ou des signaux de commande entre deux ou plusieurs composants matériels.
+Un protocole ou une entente de communication doit être en place pour coordonner l'utilisation d'un autobus. La bande passante d'un bus dépend de la largeur du bus (généralement spécifiée en bits) et de la vitesse d'horloge prise en charge. Un processeur dispose de plusieurs bus pour communiquer les composants matériels internes et externes. Un pont de bus relie deux bus différents ensemble.
+
+D'autres composant fondamentals des processeurs sont aussi l'unité : arithmetic logic unit (ALU), le processos control unit, l' interrupt controller (NVIC), the instruction fetching and decoding unit, ainsi que les interfaces pour la mémoire et le debug.
+- l'ALU permet de faire des calculs sur un signal (comme l'instruction logic AND), sur des opérations arithmétique (comme l'instruction ADD). L'ALU prend 2 données en entrées (appelés opérandes) et donne une seule sortie.
+![ALU](ALU.png)
+
+- Le processor control unit génère lui des signals de controle pour les circuits numériques interne (comme une suite de signaux des multiplexeurs, le signal de control de l'ALU) et coordonne chaques composants du coeur du processeur.
+- L'interrupt controller (NVIC) permet au processeur de stopper une execution de la tache courante et de répondre à un autre événement généré par le hardware ou par le software.
+- L'intruction fetching and decoding unit lits les instructions machines et les décodes pour que le processeur puisse les traiters. Le processor control unit génère un signal en fonction de l'opération à effectuer.
+- L'interface mémoire elle permet l'accès aux périphériques mémoires (comme la SRAM ou la Flash)
+- L'interface de debug permet au développeur d'utiliser son ordinateur pour arrêter ou démarrer un programme sur le processeur. Cela lui permet de faire du monitoring et de modifier les registres du processeur, des registres des périphériques et de voir la mémoire en temps réel.
+- Les Cortex M4 supportent les DSP et peuvent aussi avoir un FPU. Les Cortex M plus ancien de supportent pas ces fonctionalités.
+
 <div id='clang'/>
 
 # Le language C en embarqué ?
