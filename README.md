@@ -216,49 +216,40 @@ Quelques systems-on-chip Arm :
 • Marvell : 88SE6, 88SE9
 • Rockchip : RK30, RK31
 • Texas Instruments : OMAP, DaVinci
-
-# Les différents types de systèmes software
-
-On distingue plusieurs méthodes de fonctionnement dans un microcontroleur :
-![](https://asset.conrad.com/media10/isa/160267/c1/-/fr/191789_LB_01_FB/image.jpg)
-- Bare-metal programming
-	- Pas de sur couche OS
-	- Ne nécéssite pas beaucoup de puissance électrique
-	- Permet l'accès direct au hardware
-	- Permet le développement d'une application simple
-	- Timing Strict
-![](https://m.media-amazon.com/images/I/71Q4jCOGohL._SX342_.jpg)
-- Real-ime Operating System (RTOS)
-	- OS Rajouté : Ordonnancement
-	- Plus de puissance électrique nécéssaire
-	- Permet l'accès direct au hardware
-	- MultiThreading
-	- MultipleTask : Networking, Interface utilisateur etc ...
 	
-![](https://shop.mchobby.be/1496-large_default/beaglebone.jpg)
-- Embedded General Purpose Operating System (GPOS) (Linux, Mac, Windows, Android ...)
-	- Surcouche importante : OS, MMU
-	- Un microprocesseur est requis et parfois plus de mémoire (mémoire externe flash et ram additionnelles).
-	- Ne permet pas l'accès aux drivers hardware direct (Abstract layer)
-	- MultiThrading, MultiProcessing
-	- Multiple complex task : networking, filesystem, graphical interface etc ...
-	
-## Instruction Encoding and Decoding
-ARM possède plusieurs jeux d'instructions possibles. 
+# ARM Instruction Set Architectures
 
-- Le jeu d'instruction ARM est une suite d'instructions codé sur 32 bits.
+![Historique_ARM](Historique_ARM.png)
+
+## ARM Assembly instruction sets
+
+Les processeurs ARM suportent principalement 4 différents jeux d'instructions : Thumb, Thumb-2, ARM32, et ARM64.
+- Le jeu d'instruction ARM64 est une suite d'instructions codé sur 64 bits.
+Sont seulements utilisés dans des applications bureautique et les serveurs.
+- Le jeu d'instruction ARM32 est une suite d'instructions codé sur 32 bits.
+Il donne plus de flexibilité que le jeux d'instruction Thumb, car il possèdes plus d'opérandes et de plus de registres qui sont codés sur 32 bits. 
+Les instructions ARM32 tournent plus rapidement que le jeux Thumb parce qu'une instruction ARM éffectue les instructions plus rapidement.
+Le déavantage de ce code est la densité du code qui augmente.
 - Le jeu d'instruction Thumb est une suite d'instructions codé sur 16 bits.
+Il permet de priviliger une densité de code imoortante (parce que ses instructions sont sur 16 bits).
+Ceci limite les possiblités et réduit le nombre des instructions. Cela est bénéfique en terme de taille, de coût mais aussi de longévité des batteries.
 - Le jeu d'instruction Thumb-2 est une suite d'instruction qui peuvent être coté sur 16 ou sur 32 bits.
+Ce jeux est un compromis entre ARM32 et Thumb, il permet de trouver le meilleur compromis entre densité et performance de code.
 
 Le choix du jeu d'instruction se base sur un compromis entre la densité du code et la performance.
 La densité du code messure le taille du binaire en finalité. Un code dense signifie une taille de binaire plus basse (moins de bytes).
 Une densité de code importante est parfois préféré dans les systèmes embarqués car moins de mémoire est nécéssaire pour encoder le binaire. 
 Cela a pour effet de réduire le cout et la consommation énergétique.
 
-Ainsi le jeu d'instruction 16 buts Thumb décroit la taille du programme. 
+Ainsi le jeu d'instruction 16 bits Thumb décroit la taille du programme. 
 Lorsque le jeu d'instruction ARM améliore la fléxibilité d'encodage. Il inclus alors plus d'opérande et améliorre les performances du système.
 Le jeu d'instruction Thumb-2 lui qui est un mélange des deux jeux d'instructions permet de trouver un bon compris entre l'utilisation des instructions 16 bits et 32 bits.
 Ce qui permet de trouver le bon compromis entre la taille du code et les performances.
+
+![Cortex-M-Instruction-SET](Cortex-M-Instruction-SET.png)
+
+## Instruction Encoding and Decoding
+ARM possède plusieurs jeux d'instructions possibles. 
 
 ### Le jeu d'instruction Arm
 
@@ -269,6 +260,57 @@ Ce qui permet de trouver le bon compromis entre la taille du code et les perform
 
 [Thumb Instruction Set Encoding](https://developer.arm.com/documentation/ddi0406/c/Application-Level-Architecture/Thumb-Instruction-Set-Encoding?lang=en)
 
+
+## Cortex ARM Families
+
+On distingue 3 familles de processeurs Cortex :
+- Les Cortex-M qui sont designé pour des microcontroleurs (M pour microcontroleur)
+- Les Cortex-R pour du traitement temps réel sur des cibles embarqués (R pour Real Time)
+- Les Cortex-A pour des applications hautes performance (A pour Application)
+
+Les processeurs Cortex-A sont spécifiquement designés sur une architecture ARMv7-A ou ARMv8-A qui permettent d'avoir des performances rapides sur des devices sophistiqués, comme les smartphones et tablettes.
+Ils peuvent supporter des systèmes d'exploitations comme Linux, iOS ou Android.
+
+Les processeurs Cortex-R dont spécifiquement désignés pour des systèmes temps réels qui exigent une haute fiabilité, une tolérance aux pannes, et réagit de façon déterministe pour du temps réel.
+Les exemples d'utilisation d'un tel processeur peut être de l'automatisation industrielle, le contrôle d'un moteur de voiture. Dans les systèmes temps réels, l'exactitude du calcul est déterminée non seulement par l'exactitude logique, mais aussi par le fait qu'il est systématiquement achevé dans certaines contraintes de temps.
+
+Les processeurs Cortex-M offres un bon compromis entre la performance, le cout et la consommation énergétique.
+Ils permettent d'effectuer des applications multiples comme pour de la domotique, de la robotique, des protocol industrielles, des montres connectés et de nombreux IoT.
+Contrairements aux processeurs utilisés dans les PC ceux ci intègres un coeur processors, une mémoire, et de nombreux périphérique d'entrée sorties, timers, des ADC, des canaux de communication série, et des drivers LCD.
+
+![Cortex-M Product line](Cortex-M Product line.png)
+
+Dans la famille des cortex M on trouve par exemple le Cortex-M0 et le Cortex-M0+, le Cortex-M1, Cortex-M3, Cortex-M4 et le Cortex-M7.
+Les 3 premiers sont sur une architecture VON Neumann, et les 3 derniers sur une architecture Harvard. De plus les Cortex M0/M0+/M1 sont sur du ARMv6-M, et les Cortex-M3/M4/M7 sur du ARMv7-M.
+(ARMv6-M et  ARMv7-M correspondent aux instruction set architecture)
+
+Les processeurs Cortex-M sont rétrocompatible. C'est à dire qu'il programme compilé pour Cortex-M4 peut fonctionner sur Cortex-M3 sans aucune modification.
+
+Le Floating Point Unit (FPU) est un coprocesseur pour les opérations flotantes, c'est un processeur optionnel sur les Cortex M4-M7. Ces derniers possèdes aussi un single-intruction multiple data (SIMD) et un multiply and accumulate (MAC) pour faire du digital signal processing application (DSP).
+
+Pour identifier rapidement de quel type de processeur il s'agit sur les produits STM32 il suffit de comprendre les [Conventions de Nomage des STM32](https://www.digikey.com/en/maker/blogs/2020/understanding-stm32-naming-conventions)
+## Organisation interne d'un processeur
+
+Intéréssons nous de plus prêt au diagramme bloc d'un processeur :
+L'implémentation des périphériques se fait par le vendeur du processeur. Les bus de données et les ponts de communications pour les communications entre le coeur et les périphériques sont prédéfinis.
+
+Des exemples de périphériques que l'on peut trouver dans un processeur Cortex-M sont les LCD controllers, encore les communications séries (I2C,SPI et USART), USB , DAC, ADC.
+Prenons par exemple de cas du STM32F401RE : (Cortex-M4) 
+
+![STM32F401RE_Block_Diagram](STM32F401RE_Block_Diagram.png)
+
+Le diagramme block ci dessus montre comment le coeur et les périphériques sont intégrés dans la puce.
+
+- Le coeur du processeur communique avec la mémoire flash (typiquement pour cela utilise une instruction mémoire), avec la SRAM (avec une instruction data), le DMA ou encore avec les GPIOs et le PHY via l'AHB bus matrix (aussi appelé crossbar switch).
+
+- La matrice de bus est un schéma d'interconnexion, qui permet des flux de données simultanés entre les composants connectés à la matrice de bus, fournissant ainsi une bande passante de communication élevée. La matrice de bus connecte des composants à haute vitesse, tels que le cœur du processeur, Flash, SRAM, contrôleurs DMA et PHY, ou encore les GPIOs.
+
+- Les périphériques sont connectés à la matrice de bus via des ponts qui permettent de lier : l'advanced high-performance bus (AHB) et le advanced peripheral bus (APB). Généralement l'AHB est utilisé là ou se trouve de grosses bandes passantes, et l'APB pour des bandes passantes plus petites.
+l'AHB et l'APB sont connecté via des ponts, qui met en mémoire tampon les données et les signaux de contrôle pour combler l'écart de bande passante entre les deux bus et s'assurer qu'il n'y a pas de perte de données.
+
+- Chaques broches GPIO possèdes de multiples fonctions. Le software pevent les modifier. Nous pouvons utiliser les GPIOs comme une entrée numérique, ou une sortie. On peut aussi faire de l'ADC, des communications séries, des fonctionalités liés aux timers etc ... Les alternates fonctions dépend de la carte.
+
+- La plupart des périphériques comme les timers, ADC et I2C sont connecté à l'APB.
 <div id='clang'/>
 
 # Le language C en embarqué ?
@@ -608,6 +650,37 @@ int main(void)
 ```
 Dans le premier cas pour la variables `myvarOutMain` cette dernière est conservée dans le "heap", et pour la variables `myvarInMain` cette dernière est conservée dans la pile.
 
+# Les différents types de systèmes software
+
+On distingue plusieurs méthodes de fonctionnement dans un microcontroleur :
+
+![](https://asset.conrad.com/media10/isa/160267/c1/-/fr/191789_LB_01_FB/image.jpg)
+
+- Bare-metal programming
+	- Pas de sur couche OS
+	- Ne nécéssite pas beaucoup de puissance électrique
+	- Permet l'accès direct au hardware
+	- Permet le développement d'une application simple
+	- Timing Strict
+	
+![](https://m.media-amazon.com/images/I/71Q4jCOGohL._SX342_.jpg)
+
+- Real-ime Operating System (RTOS)
+	- OS Rajouté : Ordonnancement
+	- Plus de puissance électrique nécéssaire
+	- Permet l'accès direct au hardware
+	- MultiThreading
+	- MultipleTask : Networking, Interface utilisateur etc ...
+	
+![](https://shop.mchobby.be/1496-large_default/beaglebone.jpg)
+
+- Embedded General Purpose Operating System (GPOS) (Linux, Mac, Windows, Android ...)
+	- Surcouche importante : OS, MMU
+	- Un microprocesseur est requis et parfois plus de mémoire (mémoire externe flash et ram additionnelles).
+	- Ne permet pas l'accès aux drivers hardware direct (Abstract layer)
+	- MultiThrading, MultiProcessing
+	- Multiple complex task : networking, filesystem, graphical interface etc ...
+	
 ## Introduction à l'RTOS
 
 ### Introduction
@@ -1080,8 +1153,9 @@ Dans le mode center aligned , quand le registre CCR est à 0 ou le registre ARR,
 
 #### PWM Alignement
 "Toutes les sorties PWM d'un même timer ont les mêmes périodes"
+
 Un timer possède plusieurs canaux comme vue plus haut.
-Tout les canaux partagent le même tumer counter et le registre ARR.
+Tout les canaux partagent le même timer counter et le registre ARR.
 Ainsi, tout les signaux PWM produit par le même timer ont les mêmes périodes.
 Cependant leurs duty cycles peuvent être différent car chaques canaux a un CCR différent.
 
