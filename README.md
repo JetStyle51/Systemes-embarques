@@ -786,38 +786,46 @@ Mais attentions tout les périphériques ne sont pas sous la même horloge ils s
 
 ## Les GPIOs
 
-GPIO signifie General Purpose Input/Output : ils font partis des périphériques. C'est le périphérique qui permet de contrôler les pins et qui permet de communiquer avec le monde extérieur.
-La connexion entre les pins et le CPU est effectuée à travers un PORT.
+GPIO signifie General Purpose Input/Output : ils font partis des périphériques. 
+C'est le périphérique qui permet de contrôler les broches et qui permet de communiquer avec le monde extérieur.
+Ces broches sont des sorties numériques (qui sortent uniquement 0 ou 5V) et qui permettent d'allumer des LEDs, de rajouter des bouttons poussoirs ou encore d'y insérer par exemple un clavier.
 
-![gpio](gpio.png)
+### Introduction
 
-La DataSheet du composant donne le diagramme du pinout du composant sur lequel on travaille et indique sur quel port est relié quelle pin : Prenoms par exemple le pinout du raspberry pi :
-![rasp_pinout](https://www.raspberrypi-spy.co.uk/wp-content/uploads/2012/06/Raspberry-Pi-GPIO-Header-with-Photo.png)
+Le nombre de broche sur un processeur est assez limité, les broches du processeurs sont configurables par le software au démarrage pour accomplir différentes fonctions.
+Ces broches GPIO permettent de fournir une grande flexibilité et une manoeuvre importante sur le design de la carte.
 
-On prendra garde que plusieurs pin ont des fonctions multiples et parfois uniquement disponible sur ces broches. (Timer, I2C, UART, etc ...)
-Les pins d'alimentations sont repérées par l'inscription : 5V,3.3V ou encore VDD et VSS(ou GND), VDDIO etc ...
+- L'entrée numérique qui permet de détecter si l'entrée du signal est haute ou basse en définissant un certain seuil.
+- En sortie numérique pour controler la sortie de la broche. (0 ou 5V)
+- Des fonctions analogues pour faire du DAC ou de l'ADC.
+- D'autres fonctionalités plus complexes comme du PWM, un driver LCD, un timer input capture, une interruption externe, une interface USART, SPI, I2C et des communications USB.
 
-On trouve les fonctions alternative des gpios dans la datasheet de notre composant :
-![gpio_alt](gpio_alt.png)
+Nous appelons cette dernière catégorie les AF pour alternates functions.
+Le software permet de changer la fonction des GPIO au démarrage du logiciel.
 
-On observe ainsi l'état de base de la sortie en Pull-up ou Pull-Down pour notre exemple ci dessous la GPIO0 est en pull up et possède 5 fonctions alternatives.
+Un port GPIO est un regroupement de broche GPIO, (typiquement 8 ou 16), qui partagent les mêmes données et registres de contrôles.
 
-Ainsi chaques proches est connecté à un port. Un port peut être connecté au maximum à 16 broches. Le port est repéré par une lettre et un nombre qui correspond au numéro du pin. Ainsi par exemple PC2 signifie : Entrée/Sortie 2 du port C.
+- Quand une broche GPIO est mise comme entrée numérique, la valeur binaire lue sur cette broche est stocké dans le ième bit du registre input data register (IDR).
+Chaques bits dans l'IDR correspond à une entrée d'une broche différente appartenant au même port.
+- Quand une broche GPIO est mise en sortie numérique, le bit i du registre output data register (ODR) permet de controler la sortie de la broche.
+Par conséquent, 1 broche correspond à 1 bit.
+- Tout les broches GPIO d'un GPIO port peuvent être configuré indépendaments en entrée ou en sortie.
 
-Chaques ports à au moins 10 registres de configurations :
-```
-MODER: Mode Register (input; output, alternate function, analog)
-OTYPER: Output Type Register (Output Speed Register)
-PUPDR: Pullup / Pull-down Register (if pin configured as open drain)
-ODR: Output Data Register
-IDR: Input Data Register
-BSSR: Bit Set / Reset Register
-AFRL/H: Alternate Function Register (connect pin to timers, bus, event)
-BRR: Bit Reset Register (reset ODR registers)
-LCKR: Lock Register
-```
+### GPIO Intput mode : Pull Up and Pull Down
 
-Pour plus d'informations chercher les informations dans le Reference Manual du processeur.
+
+![Pull-Up-Pull-Down](Pull-up-and-Pull-down-Resistor.png)
+
+### GPIO Input : Schmitt Trigger
+
+Habituellement chaques entrée d'un GPIO contiennent un trigger de Schmitt. Ce dernier utilise un comparateur pour convertir un signal soit bruité pour obtenir une sortie plus clean.
+
+Le trigger de Schmitt utilise deux valeurs de seuil et évite ainsi les effets indésirables d'un simple comparateur.
+![Schmitt](Schmitt-Trigger.png)
+
+### GPIO Open-Drain Output
+
+![Open-Drain](https://www.elprocus.com/wp-content/uploads/op3.png)
 
 ## Les Timers
 Les timers sont des composants hardwares spéciaux qui fournissent des timestamps très précis, permettent de mesurer des intervals de temps, et d'effectuer des événements périodiquements pour de l'hardware ou du software.
