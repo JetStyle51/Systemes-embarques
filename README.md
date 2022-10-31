@@ -1773,6 +1773,7 @@ Ils sont donc plutôt adapté aux application qui n'ont pas besoin de beaucoup d
 Les moteurs pas à pas peuvent être de deux types : bipolaire et unipolaire
 
 - Un moteur pas à pas bipolaire a besoin d'une source externe d'énergie qui possède les bonnes polarités, comme un pont en H. La source d'énergie peut inverser le sens du courant et la polarité électromagnetic pour l'enroulement de chaques bobines.
+
 ![Moteur_pas_pas_bipolaire](Moteur_pas_pas_bipolaire.gif)
 
 - Un moteur pas à pas unipolaire a besoin qu'une source externe d'énergie, et le sens electrique du courant ne s'inverse pas dans l'enroulement des bobines. Le moteur unipolaire utilise la moitié de sa bobine d'enroulement pour générer le champ électromagnétique tandis que le moteur bipolaire utilise une bobine d'enroulement complète.
@@ -1819,6 +1820,138 @@ Vue éclaté du moteur que nous allons utiliser
 ![28BY-J48_view](28BY-J48_view.png)
 
 Pour plus d'information sur le moteur 28BY-J48 et son démontage se référer à ce lien : https://cookierobotics.com/042/
+
+### Stepping Mode
+
+Dans la suite nous distinguerons 4 modes de step différents :
+- Le Wave Stepping
+- Le Full Stepping
+- Le Half Step Drive
+- Le Microstepping
+
+![Motor_stepping_mode](Motor_stepping_mode.png)
+
+
+#### Wave Stepping
+
+En tant que méthode de pas à pas la plus simple, le wave stepping allume un interrupteur et alimente une seule phase à la fois. 
+La figure suivante montre la séquence de contrôle de quatre commutateurs de bobine d'enroulement (A, B, C, D). 
+Pour chaque interrupteur, si son signal de commande est élevé, l'interrupteur est activé et le courant électrique circule dans la bobine d'enroulement correspondante. 
+Par exemple lorsque le signal de SW1(A) est haut, la bobine A correspondante est excitée. Le logiciel active ces commutateurs alternativement dans cette séquence de contrôle.
+
+![Motor_wave_stepping](Motor_wave_stepping.png)
+
+Pour simplifier la compréhension, imaginons que notre rotor ai seulement deux paires de poles (en réalité ce n'est pas le cas).
+Comme dans l'illustration ci dessus le rotor tourne de 90° à chaques impulsions dans les bobines.
+Ce mode est appelée wave stepping. Une seul bobine est alimenté à la fois. Ceci offre un couple très bas.
+Cette méthode n'est pas largement utilisé dans les systèmes réels.
+
+#### Full Stepping
+
+Pendant que la méthode wave stepping alimente une seul bobine à chaques fois, le full stepping alimente deux bobines alternativement. Comme illustré dans l'image ci dessous :
+- Pour faire tourner l'arbre dans le sens horaire les bobines doivent être alimenté dans la séquence AB(-), AB, A(-)B et A(-)B(-).
+- Pour tourner dans le sens antihoraire c'est l'inverse
+
+![Motor_full_step](Motor_full_step.png)
+
+Le Wave Stepping et le Full Stepping font tourner l'arbre d'un angle de pas à chaque fois et ont le même nombre de pas en un tour. 
+Cependant, le Full Stepping produit un couple plus élevé que le Wave Stepping car deux enroulements de bobine poussent ou tirent l'arbre simultanément.
+
+Un exemple de programme embarqué qui permettrait de faire du full stepping de 360° dans le sens des aiguilles d'une montre serait : (Les GPIO sont à définir)
+```
+// Full Step : 0b1001, 0b1010, 0b0110, 0b0101
+// Each four bits sequence representent the onOFF control of A,¯A, B, ¯B.
+
+unsigned char FullStep[4] = {0x9, 0xA, Ox6,0x5};
+
+for (int j = 0; j<64; j++) { // 64 step * 5,625 = 360
+	for (int i = 0; i< 4; i++){ // Sens de rotation clockwize for (int i = 3; i >= 0; i--){ 
+		delay(1); // Delay
+		GPIOA->ODR[0] = (FullStep[i] & 0x8) >> 3; // A
+		GPIOB->ODR[0] = (FullStep[i] & 0x4) >> 2; // B
+		GPIOA->ODR[1] = (FullStep[i] & 0x2) >> 1; // ¯A
+		GPIOB->ODR[1] = (FullStep[i] & 0x1); // ¯B
+	}
+}
+```
+
+#### Half Stepping
+
+Dans ce mode, la séquence d'activation est la suivante : AB¯ , A , AB, B , ¯AB, ¯A, ¯A¯B et ¯B.
+Nous activons à la fois une bobine et deux bobines alternativement.
+Ce mode donne moins de couple au moteur que le précédent mode, mais rajoute de la résolution du niveau du step.
+Il permet de faire tourner l'arbre avec plus de souplesse également.
+
+Dans ce mode on aurait ce programme :
+```
+// Full Step : 0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001
+// Each four bits sequence representent the onOFF control of A,¯A, B, ¯B.
+
+unsigned char HalfStep[8] = {0x9, 0x8, OxA,0x2, 0x6, 0x4, 0x5, 0x1};
+
+for (int j = 0; j<64; j++) { // 64 step * 5,625 = 360
+	for (int i = 0; i< 8; i++){ // Sens de rotation clockwize for (int i = 3; i >= 0; i--){ 
+		delay(1); // Delay
+		GPIOA->ODR[0] = (HalfStep[i] & 0x8) >> 3; // A
+		GPIOB->ODR[0] = (HalfStep[i] & 0x4) >> 2; // B
+		GPIOA->ODR[1] = (HalfStep[i] & 0x2) >> 1; // ¯A
+		GPIOB->ODR[1] = (HalfStep[i] & 0x1); // ¯B
+	}
+}
+```
+
+#### Micro Stepping
+
+Comme introduit précédent, un microcontroleur peut controler un moteur pas à pas avec plusieurs modes différents. Mais ces derniers produises des mouvements sacadés et bruité du moteur.
+Le micro stepping consiste à utiliser un signal PWM pour faire des rotations full step, de 1/4, 1/8, 1/16, 1/32 de full step.
+
+Le Micro stepping divise a full step en des multiples de step plus petit. Cela permet de faire bouger l'arbre d'angle plus petit et d'effectuer un mouvement plus lisse et de réduire le problème de bruit et de vibration.
+
+Le but du micro stepping est d'ajuster l'intensité électrique dynamiquement dans chaques bobines pour produire des accélérations ou des décélérations.
+Pour cela l'utilisation d'un PWM pour générer un signal binaire rapide avec un duty cycle approprié permet d'ajuster l'amplitude du voltage envoyé dans les bobines.
+Le voltage appliqué dans une bobine est proportionnel au courant dans ces dernières.
+
+Sine cosine micro stepping est une méthode largement utilisé pour ajuster la tension l'amplitude dans chaques bobines. Quand deux bobines `a` et `b` sont exité simultanéments :
+Le couple magnétique statique global généré par les deux enroulements est : $T= -k ia sin \theta + k ib cos \theta$
+
+Ou k est une constant, $\theta$ est l'angle mécanique de l'arbre depuis la position du dernier pas et ia et ib sont le courant électrique dans les bobines a et b
+
+Lorsque l'arbre reste à un angle stable, la force de couple est équilibrée, et nous avons donc T = 0, en micro stepping (sine-cosine) pour rendre la force de couple globale nulle, nous pouvons définir un courant électrique dans les deux enroulements comme suivre :
+
+```math
+$i_{a} = I_{m} \cos(\theta)$
+
+$i_{b} = I_{m} \sin(\theta)$
+```
+ou $I_{m}$ est une constante par conséquent, le couple magnétique statique global est :
+
+```math
+T = -k i_{a} \sin(\theta) + k i_{b} \cos(\theta) = -kI_{m} \cos(\theta)\sin(\theta) + kI_{m} \sin(\theta)\cos(\theta) = 0
+```
+
+Les microprocesseurs utilisent des ondes sinusoïdales et cosinus discrètes pour piloter les deux enroulements.
+
+![Motor_micro_stepping](Motor_micro_stepping.png)
+
+Supposons que l'autoreload register du timer (ARR) est 1000, le software devrait mettre le capture register (CCR) à la séquence suivante pour un step 1/4 :
+
+```
+uint16_t CCR_MicroStepping[] = {0, 383, 703, 924, 1000};
+```
+
+Pour un step 1/2 le CCR devrait être :
+```
+uint16_t CCR_MicroStepping[] = {0, 707, 1000};
+```
+
+Pour un step 1/8 le CCR devrait être :
+```
+uint16_t CCR_MicroStepping[] = {0,195,383, 557, 707, 832, 924, 981, 1000};
+```
+
+![Motor_micro_stepping_circle](Motor_micro_stepping_circle.png)
+
+### Driving a Stepper Motor
 
 ![28BY-J48_wiring](28BY-J48_wiring.png)
 
