@@ -1755,6 +1755,74 @@ Il y a différents mode d'opérations possibles :
 - Vol de cycle (Cycle Stealing) : Le processeur et le contrôleur de DMA se partagent alternativement le bus (un cycle pour le processeur, un pour le contrôleur de DMA)
 - Transparent : Le contrôleur de DMA n’a accès au bus que lorsque le processeur n’en a pas besoin.
 
+## Moteur pas à pas
+
+Les moteurs à courant continu sont utilisés dans divers domaines, comme la robotique, les imprimantes, la domotique, les équipements médicals etc ...
+On distingue deux types de moteur à courant continu (DC).
+- Les servo-moteur qui opèrent sur une boucle fermée, il nécéssite un retour sur leurs positions pour accomplir la consigne donnée en position et vitesse.
+Ils sont plus onéreux que les moteurs pas à pas. On utilise très souvent un PWM pour controler un servo-moteur.
+- Les moteurs pas à pas, qui tournent sur des pas discrets. Il peuvent être controlé en boucle ouverte et ne nécéssite pas de retour de position.
+
+En comparaison avec les moteurs pas à pas, les servo-moteurs sont plus adapté à des applications qui nécéssite une haute vitesse et un haut couple, ou des contraintes plus importantes.
+Les moteurs pas à pas ont entendance à avoir moins de couple sur des hautes vitesses, et peut même esquiver des pas à haute vitesse, ils ont une vibration aussi plus élevé à cause des vibrations du au mécanisme de pas à pas en lui même.
+Les moteurs pas à pas sont moins onéreux car il y a moins d'électronique, en partie pas de retour de capteur et ils sont plus facile à faire fonctionner sur un microprocesseur.
+Ils sont donc plutôt adapté aux application qui n'ont pas besoin de beaucoup d'acceleration, et à charge constante.
+
+### Moteur pas à pas bipolaire et unipolaire
+
+Les moteurs pas à pas peuvent être de deux types : bipolaire et unipolaire
+
+- Un moteur pas à pas bipolaire a besoin d'une source externe d'énergie qui possède les bonnes polarités, comme un pont en H. La source d'énergie peut inverser le sens du courant et la polarité électromagnetic pour l'enroulement de chaques bobines.
+![Moteur_pas_pas_bipolaire](Moteur_pas_pas_bipolaire.gif)
+
+- Un moteur pas à pas unipolaire a besoin qu'une source externe d'énergie, et le sens electrique du courant ne s'inverse pas dans l'enroulement des bobines. Le moteur unipolaire utilise la moitié de sa bobine d'enroulement pour générer le champ électromagnétique tandis que le moteur bipolaire utilise une bobine d'enroulement complète.
+Par conséquent, un moteur pas à pas bipolaire a généralement une capacité de couple plus élevée qu'un moteur unipolaire de même poids. Cependant, un moteur pas à pas unipolaire a un circuit de commande plus simple.
+
+Dans la suite, nous étudirons le moteur pas à pas unipolaire pour montrer comment le controler à l'aide d'un processeur.
+Nous utiliserons le moteur 38BYJ-48 qui est un moteur pas à pas de 5V et qui possèdes les propriétés suivantes :
+[https://download.mikroe.com/documents/datasheets/step-motor-5v-28byj48-datasheet.pdf](https://download.mikroe.com/documents/datasheets/step-motor-5v-28byj48-datasheet.pdf)
+
+A savoir 4 phases et une résolution de 1/64. (C'est à dire 360/64 = 5,625‬° degrès par pas).
+
+### L'angle de pas
+
+Pour chaques pulsation, le moteur tourne d'un pas fixe. 
+Suivant la vitesse du champs dans les bobines le moteur tourne plus ou moins rapidement et on peut aussi controler le nombre de pas à effectuer.
+L'arbre peut tourner d'un pas complet, d'un demi-pas ou d'une fraction spécifique de pas complet. Ce qu'on appelle le pas complet, le demi-pas et le micro-pas.
+Lorsque l'arbre tourne d'un pas complet, l'angle qu'il effectue est appelé angle de pas. Nous pouvons calculer l'angle de pas comme suit.
+
+` Step Angle = 360° / step per revolution `
+
+Avec `step per revolution = P * T`
+
+Ici P correspond au nombre de phases sur le stator et T le nombre de poles magnétique permanent sur le rotor.
+![Motor_rotor_stator](Motor_rotor_stator.png)
+
+Par exemple sur la figure ci dessous, il y a 8 paires de poles sur le rotor ;
+![Motor_rotor_poles](Motor_rotor_poles.png)
+![stepper-motor-optimized](stepper-motor-optimized.gif)
+
+En règle général, un moteur pas à pas possède 2 ou 3 phases le nombre de pas est de l'ordre de 48,72,144,180 ou 200 qui correspond donc à des résolutions différentes.
+
+Le moteur que nous allons utiliser a 4 phases sur son stator, et possède 16 paires de poles.
+![28BY-J48_rotor](28BY-J48_rotor.png)
+
+Donc l'angle de pas peut être calculé ainsi :
+
+` Step angle = 360° / (4*16) = 5,625‬° `
+
+Pour un pas complet, le moteur tourne d'un `step angle` pour chaques pulsations. Pour un demi-pas il tourne d'un demi `step angle`. Pour le micro-pas il tourne d'un angle qui correspond à une fraction spécifique du `step angle`.
+Le nombre de taux d'impulsions contrôle la position et la vitesse de l'arbre du moteur, respectivement.
+
+Vue éclaté du moteur que nous allons utiliser 
+
+![28BY-J48_view](28BY-J48_view.png)
+
+Pour plus d'information sur le moteur 28BY-J48 et son démontage se référer à ce lien : https://cookierobotics.com/042/
+
+![28BY-J48_wiring](28BY-J48_wiring.png)
+
+
 ## L'endianness
 
 En mode Big Endian, le most significant bit(MSB) est à l'addresse la plus basse.
