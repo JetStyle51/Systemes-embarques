@@ -1912,16 +1912,16 @@ Pour cela l'utilisation d'un PWM pour générer un signal binaire rapide avec un
 Le voltage appliqué dans une bobine est proportionnel au courant dans ces dernières.
 
 Sine cosine micro stepping est une méthode largement utilisé pour ajuster la tension l'amplitude dans chaques bobines. Quand deux bobines `a` et `b` sont exité simultanéments :
-Le couple magnétique statique global généré par les deux enroulements est : $T= -k ia sin \theta + k ib cos \theta$
+Le couple magnétique statique global généré par les deux enroulements est : $T= -k i_{a} \sin(\theta) + k i_{b} \cos(\theta)$
 
 Ou k est une constant, $\theta$ est l'angle mécanique de l'arbre depuis la position du dernier pas et ia et ib sont le courant électrique dans les bobines a et b
 
 Lorsque l'arbre reste à un angle stable, la force de couple est équilibrée, et nous avons donc T = 0, en micro stepping (sine-cosine) pour rendre la force de couple globale nulle, nous pouvons définir un courant électrique dans les deux enroulements comme suivre :
 
 ```math
-$i_{a} = I_{m} \cos(\theta)$
+i_{a} = I_{m} \cos(\theta)
 
-$i_{b} = I_{m} \sin(\theta)$
+i_{b} = I_{m} \sin(\theta)
 ```
 ou $I_{m}$ est une constante par conséquent, le couple magnétique statique global est :
 
@@ -1953,7 +1953,26 @@ uint16_t CCR_MicroStepping[] = {0,195,383, 557, 707, 832, 924, 981, 1000};
 
 ### Driving a Stepper Motor
 
+Comme montré ci dessus :
+On ne peux pas directement alimenter un moteur pas à pas à partir des broches GPIOs parce que les ports GPIOs ne peuvent pas fournir assez de courant requis par le moteur.
+Il est important de séparer les deux parties (commandes et puissance).
+La sortie maximum en courant d'une broche GPIO est de l'ordre de 10 mA. Le moteur utilisé ici a une resistance interne de 50 $\Omega$. Donc le moteur a besoin de $i=5V/50\Omega=100mA$
+Le courant de sortie est donc pas assez fort pour alimenter le moteur.
+Le software devrait aussi configurer les broches GPIOs en mode push-pull.
+
+Une autre raison importante de ne pas brancher les GPIOs sur le moteur directement est que le moteur pourrait renvoyer sa force electromotrice dans le circuit quand ce dernier ralenti ou acclère.
+Ceci génère une tension qui renvoi du courant qui est rebalancé dans la carte et qui pourrait endommager le microprocesseur.
+
 ![28BY-J48_wiring](28BY-J48_wiring.png)
+
+Dans le schéma nous pouvons utiliser aussi un driver 8 channel Darlington pour controler le moteur. (ULN2003 : https://www.st.com/resource/en/datasheet/uln2001.pdf)
+L'ULN est un réseau de transistors Darlington haute tension et courant élevé, qui se compose de huit paires Darlington NPN. Chaque paire Darlington peut collecter des courants jusqu'à 500mA. La broche de sortie peut supporter au moins 50 V à l'état éteint.
+Des diodes de suppression sont incluses pour la commande de charge inductive. Les sorties peuvent être mises en parallèle pour une capacité de courant élevée.
+
+Pour chaque paire de darlington, si une tension positive élevée est appliquée à la broche d'entrée, la sortie correspondante est mise à la terre et elle peut tirer le courant électrique jusqu'à 500 mA.
+Si la broche d'entrée a une alimentation basse tension, la broche de sortie correspondante ne peut pas drainer de courant, une broche d'entrée ne prend qu'environ 1 mA de courant.
+
+![Motor_ULN2003](Motor_ULN2003.png)
 
 
 ## L'endianness
