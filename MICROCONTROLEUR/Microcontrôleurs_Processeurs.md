@@ -424,6 +424,9 @@ Normes :
 * IEEE 802.1Qbv
 * IEEE 802.1Qbu
 
+## Hardware packages
+[NXP packages details](https://www.nxp.com/company/blog/mcu-packaging-sometimes-its-whats-on-the-outside-that-counts:BL-MCU-PACKAGING-WHATS-OUTSIDE-THAT-COUNTS)
+
 ## Vocabulaire embedded systems :
 
 HAL: Hardware Abstraction Layer = méthode de programmation qui consiste en l’abstraction du matériel de sorte de porter l’application sur différents matériel
