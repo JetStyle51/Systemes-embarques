@@ -1974,6 +1974,181 @@ Si la broche d'entrée a une alimentation basse tension, la broche de sortie cor
 
 ![Motor_ULN2003](Motor_ULN2003.png)
 
+# Serial Communication Protocol
+
+Nous allons introduire ici 4 protocoles de communications très importants dans les communications séries : il s'agit de l'universal asynchronous receiver and transmitter (UART), inter-integrated circuit (I2C), serial peripheral interface (SPI) et enfin l'universal serial bus (USB).
+Les communications séries transfèrent seulement 1 bit à la fois et utilisent 1 seul fils par communication (direction). Il peuvent aussi partager un fil pour communiquer dans deux directions.
+Ceci les différencies des communications parallèles qui utilisent plusieurs fils et qu'ils sont capable de transmettre des données en même temps.
+En comparaison avec les communications parallèles, les communications séries sont plus lente, mais elles permettent d'utiliser des longeurs de cable plus importante et sont moins onéreuses.
+
+## UART (universal asynchronous receiver and transmitter)
+
+Une des fonctions les plus courantes de l'UART est de l'utiliser afin d'échanger en entrée sortie des données entre le processeur et le PC du développeur. Il sert en général d'un port de debug et de monitoring.
+L'UART aussi est beaucoup utilisé dans d'autres périphériques, comme les imprimantes, les terminaux et les modems. Le mot clé universal signifie que l'interface série est programmable.
+L'UART peut aussi communiquer en synchrone, dans ce cas on parle de USART.
+
+La transmission asynchrone permet aux bits d'être transmis en série sans nécessiter que l'expéditeur fournisse un signal d'horloge au récepteur.
+Cependant le transmetteur et le receveur doivent se mettre d'accord sur la vitesse de transmission des données avant que la communication commence. (Baudrate).
+Dans les systèmes numériques le baud est le nombre de bit transmis par secondes.
+Habituellement, l'interface UART peut tolérer un décalage d'horloge jusqu'à 10% pendant la transmission.
+Dans certains systèmes analogiques, tels que les modems, le débit en bauds est supérieur au débit binaire correspondant lorsqu'il y a plus de deux niveaux de tension et qu'un signal de tension transmis peut représenter plusieurs bits.
+
+![UART_Duplex_mode](UART_Duplex_mode.png)
+
+La transmission UART utilise deux canaux de communications (TX et RX) comme montré sur l'image ci dessus.
+- En mode full duplex, les données sont transmises bit à bits depuis la ligne TX, et reçu par le receiver sur la ligne RX. Le receiver reconstruit le message.
+- En mode half duplex, les données transmittent via un seul fil. TX est utilisé en tant qu'emmeteur et receveur. Dans ce mode il faut que le TX utilise un pull up de façon externe car les deux broches doivent être configuré en open drain.
+
+Pour le mode synchrone il faut que la clock soit aussi relié entre les devices? Il faut aussi que le clear to send (CTS) soit connecté avec le request to send (RTS) sur l'autre device.
+
+### UART Trame
+
+![UART_frame](UART_frame.png)
+
+La communication UART transmet ses données dans une trame. Une trame est l'unité la plus petite à l'echelle des communications. 
+La trame UART se caracterise par la longueur des données (7,8, ou 9 bits), le bit de parité ( pair ou impair, ou pas de parité)optionnel, le nombre de bit de stop (0.5,1,1.5,2 bits), et l'ordre des données (MSB ou LSB first).
+
+Chaques trames UART commence par un bit de start, représenté par un niveau bas.(après un état haut) Ensuite toutes les données sont envoyés à la suite. 
+Le software se charge de définir l'ordre des bits.
+Par exemple supposons que le LSB est envoyé en premier, quand l'UART envoit 0xE1, le bit stream est 0x10001111.
+Le nombre de bit à envoyer est aussi configurable par le software.
+
+Quand l'emmeteur envoi sa trame, l'emmeteur peut calculer un bit de parité et qui est envoyé au receveur afin de vérifier s'il y a eu des erreurs de transmissions.
+Le bit de parité est dans un niveau haut pour representer une logique à 0. A l'état bas pour une logique à 1.
+Le logiciel peut configurer la logique 1 sur le bit de parité pour représenter un nombre impair ou pair de bit à 1 dans les données transmises.
+- Even parity : la combinaison des bits de données et du bit de parité contient un nombre pair de bit à 1.
+- Odd parity : Le nombre total de 1 dans les données et dans le bit de parité contient un nombre impair de bit à 1.
+Par exemple, si les données sont 0b00010001, le bit de parité sera à 1 si le odd parity est utilisé, 0 si l'even parity est utilisé.
+
+Chaques trames termine par un bit de stop, représenté par un état haut.
+Si la transmission est terminé le canal reste à l'état haut.
+Si le receveur ne recoit pas d'état haut, il considère que le canal de transmission a été corrompue ou coupé.
+Le nombre de bit de stop est configurable à 0.5,1,1.5, ou 2 bits par le software.
+
+Comme les horloges de l'émetteur et du récepteur sont indépendantes l'une de l'autre, le suréchantillonnage est une approche efficace pour atténuer l'effet de la déviation d'horloge et éviter la corruption par le bruit à haute fréquence.
+L'échantillonnage est habituellement de l'ordre de 8 à 16 fois plus rapide que le baudrate.
+Le recepteur échantillonne ainsi chaques bits 8 à 16 fois et utilise les valeurs pour estimer une valeur au milieu du cycle qui permet une liaison plus robuste.
+
+![UART_Oversampling](UART_Oversampling.png)
+
+### Baud rate
+
+Attention ne pas confondre baud rate et bit rate.
+Le baud rate est le nombre de pulsation par secondes.
+
+- En utilisant le déphasage et d'autres technologies, une impulsion sur les lignes téléphoniques peut représenter plusieurs bits binaires. résultant en un débit binaire supérieur au débit en bauds.
+- Dans un système de communication numérique, étant donné que chaque impulsion représente un seul bit, le débit en bauds est le nombre de bits physiquement transférés par seconde, y compris le contenu réel des données et la surcharge du protocole, ce qui conduit à un débit binaire supérieur au débit en bauds.
+
+Par exemple : si le baud rate est à 9600, avec 8-N-1 trames  ( 8 data bits, a start et stop bit, no parity).
+Le taux de transmission des données réelles n'est pas de 9600 bits par seconde/8 = 1200 octets par seconde.
+Les bits de démarrage et d'arrêt sont la surcharge du protocole.
+
+### UART Standards
+
+Les niveaux de tensions pour l'UART sont différents suivants les standards. (RS-232, RS-422 et le RS-485).
+Le prefix RS signifie recommended standard.
+Quand le niveau de tension de RS-422 et de RS-485 sont différents avec deux fils séparés, le RS-232 utilise un voltage asymétrique avec une masse partagée.
+
+Expliquons d'abord la différence entre un signal asymétrique et différentiel.
+Outre, la masse partagée, le signal asymétrique n'utilise qu'un fil pour transmettre sa donnée.
+Les signaux différentiels utilises deux cables torsadés qui transmettent la même donnée mais en opposée.
+Le bruit electrique peut être induit dans les fils ou être généré par une différence de masse.
+Cependant le bruit agit de la même façon sur les deux paires de fils.
+De cette façon on peut annuler le bruit au niveau du recepteur.
+
+![UART_noise](UART_noise.png)
+
+On peut aussi avec un signal differentiel transmettre sur une fréquence plus haute sur une plus grande distance.
+
+![UART_RS_connector](UART_RS_connector.jpg)
+
+|   | RS-232          | RS-422          |  RS-485 |
+| :--------------- |:---------------:|:---------------:|:---------------:|
+| Voltage signal  |   Asymétrique (logique 1 : de +5V à +15V, logique 0 : de -5 à -15V)        | Différentiel (de -6V à +6V) | Différentiel (de -7V à +12V) |
+| Max distance  | 15m             | 1200m | 1200m |
+| Max speed  | 20Kbit/s           | 10Mbits/s | 10Mbits/s |
+| Number of device  | 1 master, 1 receiver          | 1 master, 10 receiver | 32 master, 32 receiver |
+| Mode  | Full duplex          | Full duplex, half duplex | Full duplex, half duplex |
+
+Dans le RS-232, une logique 1 correspond à un niveau de voltage de +5V à +15V et un niveau bas à un niveau de tension de -5V à -15V.
+Le receveur doit interpréter le signal comme une logique haute pour une tension entre +3V et +25V. Et un niveau de voltage de -3V à -25V comme une logique à 0.
+Tout les niveaux de tensions entre -3V et +3V sont considérés comme données invalides.
+Quand la ligne est en attente elle doit être mise à l'état basse.
+
+Les PC ne fournissent pas de port UART, mais plutôt un port USB.
+Cependant les PC les plus anciens possèdents entre un port RS-232.
+
+Cependant même avec un RS-232 sur le PC on ne peux pas brancher un microprocesseur directement sur le port RS-232 dû à des incompatibilités de tensions.
+Les microprocesseurs ne supportent que les signaux plus bas que 5V.
+Les STM32 utilisent 0V pour une logique à l'état bas et 3V pour une logique à l'état haut.
+Les composants comme le FT232R permet de convertir un UART vers un port USB standard.
+
+### UART Polling mode
+
+Todo
+
+### UART Interrupt Mode
+
+Todo
+
+### UART DMA Mode
+
+Todo
+
+## I2C
+
+L'I2C pour inter integrated circuit est un standard dans les bus de communications, introduits dans les années 1980 par Philips.
+Il permet de faire communiquer deux périphériques en utilisant deux fils : un serial data line (SDA) et un serial clock line (SCL).
+Les deux fils permet de réduire le nombre de broches physique, le rend bon marché et simple à interfacer.
+Les données d'un tel bus peuvent être transmisse dans les 100Kbits/s dans le mode standard, 400Kbits/s pour le mode rapide, et plus de 3.4 Mbits/s pour le mode très rapide.
+
+![I2C_wiring](I2C_wiring.png)
+
+Chaques périphériques, y compris le périphérique maitre possède une unique addresse qui est typiquement sur 7,10, ou 16 bits. Suivant la fonction, chaques devices peut être emmeteur ou recepteur.
+Par exemple une sonde de température numérique peut se comporter en éméteur.
+Un écran LCD en recepteur.
+Une mémoire peut être émétrice ou receptrice.
+
+Le maitre configure l'itinitalisation du transfert des données sur le bus, il genère aussi le signal de l'horloge qui permet de transférer les données sur le bus, et aussi termine le transfer sur chaques infos demandés.
+Les périphériques connectés aux maitres (master) sont appelées les esclaves (slaves).
+Plusieurs maitres peuvent co-exister sur le même bus I2C. 
+Lorsque plusieurs maîtres veulent contrôler le bus, une procédure d'arbitrage est alors effectuée.
+La capacité du bus limite le nombre d'appareils pouvant être connectés au bus.
+
+## SPI
+
+Serial Periphical Interface (SPI) est un bus asynchrone dans les communications séries.
+Ce dernier est très utilisé pour échanger des données entre un microprocesseur et un périphérique en utilisant 4 fils.
+Par exemple, les caméras numériques utilisent souvent la liaison SPI pour communiquer et sauvegarder les photos dans une mémoire MMC ou une carte SD.
+
+La liaison SPI est simple et consomme peut d'énergie, elle supporte aussi un haut débit.
+Le déavantage d'une liaison SPI est qu'une telle liaison ne peux pas supporter plusieurs maitres, et les esclaves ne peuvent pas instancier une communication ou controler la vitesse de transmission des données.
+Le master inititie et controle toute les communications.
+
+![SPI_Block_diagram](SPI_Block_diagram.png)
+
+Une liaison SPI se constitue de 4 fils :
+- Un master in slave out data line (MISO)
+- Un master out slave in data line (MOSI)
+- Un serial clock line (SCLK)
+- Un active-low slave select line (SS)
+
+Une liaison SPI ne supporte qu'un seul maitre sur la ligne et communique avec un ou plusieurs esclaves.
+Quand le maitre veut discuter à un esclave il tire le signal à bas le signal SS du slave avec lequel il veut parler.
+Ensuite le maitre cadence la transmission avec sa clock pour transmettre ses données sur MOSI et MISO.
+
+L'échange des données peut se faire simultanéments dans les deux directions.
+C'est une transmission en full duplex. Les données sont transmissent de façon synchrone sur les fils MOSI et MISO, avec un flux opposés sur les deux fils.
+Prenons note que le SCLK est unidirectionnel, seul le maitre peut cadencer le signal.
+
+Quand le maitre a choisi le périphérique avec lequel il souhaite discuter, le périphérique esclave en question écoute la clock et le signal MOSI.
+Quand il n'y a qu'un seul esclave on peut relier le canal SS à la masse directement, ou le programme peut le tirer à la masse en permanence.
+
+## USB
+
+Universal Serial bus : TODO
+
+## Bluetooth
 
 ## L'endianness
 
