@@ -2144,6 +2144,63 @@ Prenons note que le SCLK est unidirectionnel, seul le maitre peut cadencer le si
 Quand le maitre a choisi le périphérique avec lequel il souhaite discuter, le périphérique esclave en question écoute la clock et le signal MOSI.
 Quand il n'y a qu'un seul esclave on peut relier le canal SS à la masse directement, ou le programme peut le tirer à la masse en permanence.
 
+### SPI : Echanges des données
+
+Le SPI est un procotocole asynchrone, l'esclave doit envoyer et récevoir ses données en se basant sur l'horloge du maitre.
+Cela difféère d'un protocole asynchrone qui ne possède pas de signal d'horloge.
+Les données SPI doivent êtres échangés à la même vitesse.
+
+- Quand un bit sort du canal MISO depuis les registres de l'esclave pendant une période de clock. Une nouvelle donnée sort depuis la ligne MOSI à la même vitesse.
+- Quand un périphérique écrit un bit vers la data line sur un front montant ou descendant. L'autre périphérique lui lit la donnée sur le front opposé sur la même période d'horloge.
+- La taille des données transférés est habituellement un bytes (8 bits) ou un halfword(16 bits).
+
+![SPI_Shift_bit](SPI_Shift_bit.png)
+
+Les communications depuis le maitre vers l'esclage et la communication entre l'esclave et le master sont toujours dans un contexte concurentielle.
+Dans chaques canaux (MISO ou MOSI), chaques périphériques envoi une donnée en même temps qu'il en reçoit une.
+Aucun appareil ne peut être simplement un émetteur ou un récepteur.
+
+Cependant, quand un esclave veut envoyer une donnée au master sur la ligne MISO, l'esclave doit attendre le signal d'horloge. 
+En même temps le master doit envoyer des données factices via la ligne MOSI pour initialiser un tranfert de données.
+
+Quand le maitre veut envoyer un signal à un périphérique "n", il soit mettre le signal Slave Select de l'esclave à l'état bas.
+Pendant la communication le MSB est envoyé en premier.
+
+Dans l'exemple ci dessous on lit la valeur du canal MOSI sur le front descendant, et le calnal MISO sur le front montant.
+
+0b10100101 = 0xA5 = 165
+
+![SPI_Communication](SPI_Communication.png)
+
+### SPI : Configuration de l'horloge
+
+La vitesse de l'horloge, défini la vitesse de transmission des données.
+En général ceci se situe entre 1 et 20 MBits/s
+
+Le maitre peut changer la vitesse de transmission de ces données en changeant les prescalers au niveau des prescalers register.
+Pour les processeurs STM32L, le baud rate control factor est stocké dans le registre SPI Control Register (CR1) dans le BR[2:0].
+
+La fréquence du SCLK est programmé en settant ce baud rate avec la formule :
+
+```math
+f_{SCLK} = f_{SYSCLK} / 2^{1+BR[2:0]}
+```
+
+Il existe 4 modes possibles pour la programmation de l'horloge au niveau de la polarité pour sampler les données.
+Cela dépend du set de deux paramètres qui sont la clock phase (CPHA) et la clock polarity (CPOL).
+Quand CPOL est à 0 cela signifie que la ligne SCLK est à bas quand elle est en attente.
+Quand CPOL est à 1 cela signifie que la ligne SCLK est à haut quand elle est en attente.
+Quand CPHA est à 0, la première transmission sur la clock (qu'elle soit sur un front montant ou descente) est la première donnée capturée.
+Quand CPHA est à 1, La deuxième transmission d'horloge est le premier front de capture.
+
+La combinaison de CPOL et CPHA sélectionne le front d'horloge pour la transmission et la capture de données. La capture du premier bit est retardée d'un demi-cycle en mode 0 et 2.
+
+![SPI_Polarity](SPI_Polarity.jpg)
+
+### SPI : Example with SMT32
+
+Todo
+
 ## USB
 
 Universal Serial bus : TODO
