@@ -2115,6 +2115,75 @@ Plusieurs maitres peuvent co-exister sur le même bus I2C.
 Lorsque plusieurs maîtres veulent contrôler le bus, une procédure d'arbitrage est alors effectuée.
 La capacité du bus limite le nombre d'appareils pouvant être connectés au bus.
 
+### I2C : Les broches I2C
+
+Les broches utilisés pour les périphériques maitres et esclaves sont SDA et SCL. Ces derniers doivent être configuré en drain ouvert.
+Le drain ouvert est une sortie spécial. La broche de sortie est connectée à une source de tension positive si un haut actif est configurée (logique 1).
+La broche de sortie est dans un état d'impédance élevée si un état bas (0 logique) est configuré.
+L'impédance élevée est souvent obtenue en maintenant la sortie en flottante, c'est à dire non connecté à la masse ou à une source de tension positive.
+
+Le software peut configurer le SDA et le SCL en drain ouvert. Cependant la résistance de pull-up dans le processeur est trop grande, 
+souvent de l'ordre de 100kohms. Une si grande résistance fournit une puissance de rappel trop faible pour I2C.
+Pour réduire les temps de rise d'une ligne I2C on utilise souvent des résistances plus faible de l'ordre de 3kohms.
+
+Comme montré dans la première image, la ligne SDA et SLC sont connecté au VCC avec deux résistances de pull up. Les valeurs de résistances conseillés sont 4.7Kohms pour du low speed, 3kohm pour du standard speed, et 1kohm pour du high speed.
+
+### I2C : Le protocole.
+
+![I2C_Protocol](I2C_Protocol.jpg)
+
+Le protocole I2C comment toujours par un bit de start et termine par un bit de stop.
+
+- Le bit de start est défini comme une transition d'un état haut vers bas de la ligne SDA, quand la ligne SCL est haute.
+- Le bit de stop est défini comme une transition d'un état bas vers haut de la ligne SDA, quand la ligne SCL est haute.
+
+C'est le maitre qui génère les bits de start et de stop.
+Les périphériques eux sont capables de détecter ces états.
+Après que le bit de start a été instancié, le maitre envoi les données bytes par bytes, Pour chaques bytes le MSB est transféré en premier.
+Ensuite l'esclave envoi un acknowledge bit vers le maitre, pour informer le maitre de la bonne reception du byte.
+
+Après qu'un byte a été transféré, le receveur doit répondre à l'emmeteur en emmettant un bit ACK ou NACK.
+De ce fait, le transmetteur relache la ligne SDA durant la 9ième période d'horloge (ACK Clock period) donc le recepteur peut tirer SDA vers le bas.
+Si le SDA est vers le bas, l'ACK est confirmé.
+Si le SDA est vers le haut, on obtient un NACK.
+
+![I2C_ACK_NACK](I2C_ACK_NACK.png)
+
+- Quand le maitre envoi une donnée à l'esclave, un NACK de l'esclave signifie que la communication a échoué. Dans ce cas le maitre doit alors envoyer un bit de stop du transfert courant et redémarrer le transfert avec un bit de start.
+- Quand l'esclave envoi une donnée au maitre, un NACK du maitre signifie que le maitre a envoyé un bit de stop pour terminer la communication après que le bytes ai été transféré.
+
+Bien que le signal d'horloge de transfert soit généré par le maître, l'esclave peut également contrôler indirectement la vitesse de transfert via l'étirement de l'horloge.
+Si l'esclave est trop occupé pour recevoir un autre octet, il maintient la ligne SCL au niveau bas pour forcer le maître à attendre. 
+En raison de la logique "AND" du fil, le maître ne peut pas piloter SCL haut si l'esclave maintient SCL à bas. 
+Le maître reprend le transfert de données après que l'esclave a libéré SCL.
+
+![I2C_Block_Diagram](I2C_Block_Diagram.png)
+
+Les processeurs peuvent posséder plusieurs interfaces I2C. 
+Sur l'image ci dessus on retrouve le block diagram d'un STM32.
+Les octets stockés dans le registre de données sont décalés vers ou vers la ligne SDA via un registre de décalage de données interne, avec le MSB entrant ou sortant en premier.
+
+- Quand le maitre transfert une donnée vers l'esclave, l'hardware du maitre set automatiquement le TxE (Transmitter buffer empty) flag dans le status register si le maitre a reçu un ACK de l'esclave.
+Cela informe le software d'envoyer le byte suivant.
+- D'autre part, si le master a reçu un byte avec succès, l'hardware du maitre set automatiquement le RxNE (Receiver buffer not empty) flag dans le status register.
+Cela informe le software qu'il peut lire le bit reçu.
+
+Si les interruptions sont utiliss, les interruptions I2C prennent places dans les conditions suivantes :
+- L'I2C du master génère une interruption si le start bit est envoyé, une slave addresse est envoyée, l'hardware sets le flag Txe ou RxNE, ou que le transfert de toutes les données soit complété.
+- L'I2C du slave gènère une interruption si l'addresse reçu correspond avec sa propre addresse, un bit de stop est reçu, l'hardware sets le flag Txe ou RxNE.
+
+Quand il existe plusieurs périphériques sur le bus, le "clock synchronisation" et le "bus arbitration" est requis. Durant l'IDLE, le SCL et le SDA sont à l'état haut.
+- Clock Synchronisation : L'interface SCL de tout les périphériques sont sur une logique "AND". Quand 1 maitre met le SCL à bas, aucun autre ne peux le mettre à haut.
+- Bus arbitration : Sur un front descendant SCL, chaques maitre vérifient si le SDA correspond à ce qu'il a envoyé.
+Chaque fois qu'un maître essaie de transmettre un niveau haut mais détecte un niveau bas sur SDA, ce maître perd l'arbitrage. 
+Chaque maître perdant est immédiatement passé en mode esclave reçu car le maître gagnant peut être en train de l'adresser. 
+Un maître perdant redémarrera le transfert après avoir détecté un bit STOP.
+
+### I2C : Trames de données
+
+Un slave peut avoir une addresse sur 7 ou 10 bits.
+
+
 ## SPI
 
 Serial Periphical Interface (SPI) est un bus asynchrone dans les communications séries.
