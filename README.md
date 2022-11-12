@@ -2183,6 +2183,23 @@ Un maître perdant redémarrera le transfert après avoir détecté un bit STOP.
 
 Un slave peut avoir une addresse sur 7 ou 10 bits.
 
+Dans le cas d'un slave qui a une addresse sur 7 bits.
+1. Le maitre commence par envoyer un bit de start, le slave address, et un bit ($R/\overline{\rmW}$) qui représente la direction de transfert. Le slave a qui s'addresse la donnée renverra un bit ACK.
+La direction de la donnée est représenté par le bit ($R/\overline{\rmW}$) : si le ($R/\overline{\rmW}$) bit est à 1, le master est en attente d'une data du slave. Si le ($R/\overline{\rmW}$) est à 0, le master redemande au slave de rester en écoute.
+2. Après que le slave ai fait son ACK sur son addresse, la direction des données est donnée par le ($R/\overline{\rmW}$) bit. Les datas sont transférés octet par octet. Chaqu'un suivi d'un ACK ou d'un NACK.
+Il faut donc 9 cycle pour envoyer 1 octet.
+3. Le maitre termine la communication en envoyant le bit de stop à l'esclave.
+Il se peut que le maitre génére un bit de start sans bit de stop avant. Cela permet au master de communiquer avec un autre slave ou avec le même esclave sans relacher le bus.
+Par example, un maitre peut envoyer une commande à un slave puis immédiatement recevoir une donnée de l'esclave.
+
+![I2C_Frame](I2C_Frame.png)
+
+Dans le cas d'un slave qui a une addresse sur 10 bits la trame change légèrement.
+- Après avoir envoyé le start bytes, le premier octet envoyé par le master correspond à une suite de 5 bits constants (0b11110) + les deux bits MSB de l'addresse de l'esclave. Ensuite il envoi un bit  ($R/\overline{\rmW}$).
+Ensuite dans un second temps, le maitre envoi les 8 bits restant qui sont les bits de poids plus faible.
+- Quand le master envoi les premiers bits, il se peut que plusieurs esclaves réponses. Plusieurs ACK peuvent donc apparaitre pour la première période.
+- Quand le master envoi les bits suivants, au plus 1 device doit répondre. Plusieurs ACK n'est pas voulu lors de cette opération.
+
 
 ## SPI
 
