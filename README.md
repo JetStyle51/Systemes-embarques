@@ -779,6 +779,34 @@ les pages des autres processus ne sont projetées à aucun emplacement de sa mé
 
 ![alt text](mmu.png)
 
+## Les Registres ARM
+
+### General Purpose Register (R0-R12)
+
+### Stack Pointer (SP)
+
+### Link Register (LR)
+![alt text](https://ece353.engr.wisc.edu/wp-content/uploads/sites/607/2014/07/LinkRegister-1024x554.jpg)
+
+### Current Program Status Register (CPSR)
+
+### (Special-purpose) Program Status Registers, xPSR
+
+The Program Status Register (PSR) is a 32-bit register that comprises three subregisters:
+
+Application Program Status Register, APSR
+Holds flags that can be written by application-level software, that is, by unprivileged software. APSR handling of application-level writeable flags by the MSR and MRS instructions is consistent across ARMv6T2, ARMv6-M, and all ARMv7 profiles.
+
+Interrupt Program Status Register, IPSR
+When the processor is executing an exception handler, holds the exception number of the exception being processed. Otherwise, the IPSR value is zero.
+
+Execution Program Status Register, EPSR
+Holds execution state bits.
+
+### Program Counter (PC)
+
+
+
 ## Les Clocks.
 
 Tout les périphériques doivent être sous horloge pour fonctionner.
