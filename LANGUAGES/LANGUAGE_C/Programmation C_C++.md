@@ -27,8 +27,8 @@
     - [Créer des threads](#créer-des-threads)
     - [Les mutex](#les-mutex)
   - [Low Level](#low-level)
-    - [What does & 0xFF do?](#what-does--0xff-do)
-    - [What does double underscore ( __const) mean in C?](#what-does-double-underscore--__const-mean-in-c)
+    - [What does \& 0xFF do?](#what-does--0xff-do)
+    - [What does double underscore ( \_\_const) mean in C?](#what-does-double-underscore--__const-mean-in-c)
     - [Double underscore un macro](#double-underscore-un-macro)
     - [Déclaration d'une variable en `volatile`](#déclaration-dune-variable-en-volatile)
     - [Déclaration d'une variable en `const`](#déclaration-dune-variable-en-const)
@@ -36,6 +36,7 @@
     - [Déclaration d'une variable avec `register`](#déclaration-dune-variable-avec-register)
     - [Déclaration d'une variable en `static`](#déclaration-dune-variable-en-static)
     - [Déclaration d'une variable en `auto`](#déclaration-dune-variable-en-auto)
+    - [@ in C](#-in-c)
   - [Preprocessor](#preprocessor)
     - [Conditions](#conditions)
     - [Utiliser du code C parmi du C++](#utiliser-du-code-c-parmi-du-c)
@@ -735,6 +736,26 @@ Cette classe est un héritage du langage B. En C, ce mot-clé sert pour les vari
 
 [Class auto en C]
 
+### @ in C
+
+The **@** can be used to specify the absolute address of a variable on embedded systems.
+```c
+unsigned char buf[128]@0x2000; //example from StackOverflow
+
+/*! Example from Sliceio
+ * \var const uint32_t FsblVersion @ MFW_FSBL_VERSION_NOR_OFFSET  
+ * \brief FSBL version 
+ *
+ * Must always be at the same location in NOR => MFW_FSBL_VERSION_NOR_OFFSET must never change
+ * (in order for Main FW to retrieve it)
+ */
+const uint32_t FsblVersion @ MFW_FSBL_VERSION_NOR_OFFSET = MFW_FSBL_VALID_TAG_VERSION | (PRODUCT_FSBL_MAJOR_FW_VERSION << 8) | PRODUCT_FSBL_MINOR_FW_VERSION;
+```
+
+Note this is a non-standard compiler extension.
+
+[@ discussions]
+
 ## Preprocessor
 
 ### Conditions
@@ -1127,3 +1148,4 @@ Exemple : vous êtes sur un PC avec un processeur de type Intel en 64bits (archi
 [Ce que signifie (__const)]: <https://stackoverflow.com/questions/1449181/what-does-double-underscore-const-mean-in-c>
 [double underscore in c macro]: <https://stackoverflow.com/questions/26652288/unclear-c-code-double-underscore-in-c-macro>
 [Youtube arbres binaires]: <https://www.youtube.com/watch?v=1M66CUV877s>
+[@ discussions]: <https://stackoverflow.com/questions/33324076/what-is-absolute-symbol-and-how-to-define-it-in-c/33324663#33324663>
