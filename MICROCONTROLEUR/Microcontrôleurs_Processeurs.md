@@ -40,6 +40,7 @@
 - [Networking](#networking)
   - [IPv4/IPv6 network stack](#ipv4ipv6-network-stack)
   - [Time sensitive Network](#time-sensitive-network)
+  - [Hardware packages](#hardware-packages)
   - [Vocabulaire embedded systems :](#vocabulaire-embedded-systems-)
 
 # Opérateurs logiques
@@ -308,6 +309,7 @@ Le bus de données CAN (Controller Area Network) est un bus système série trè
 Il met en application une approche connue sous le nom de multiplexage, et qui consiste à raccorder à un même câble (un bus) un grand nombre de calculateurs qui communiqueront donc à tour de rôle.
 
 CAN est un bus de données série bidirectionnel half-duplex dans le domaine automobile, mais est utilisé en unidirectionnel — simplex — dans l'aéronautique, pour obtenir un comportement déterministe.
+CANOpen est un exemple de protocole qui met en place le CAN.
 
 ### Modbus
 RS485
