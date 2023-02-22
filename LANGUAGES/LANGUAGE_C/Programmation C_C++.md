@@ -38,13 +38,13 @@
     - [Déclaration d'une variable en `auto`](#déclaration-dune-variable-en-auto)
     - [@ in C](#-in-c)
   - [Preprocessor](#preprocessor)
+    - [pragma pack](#pragma-pack)
     - [Conditions](#conditions)
     - [Utiliser du code C parmi du C++](#utiliser-du-code-c-parmi-du-c)
     - [Eviter l'inclusion multiple ou récursivité des librairies](#eviter-linclusion-multiple-ou-récursivité-des-librairies)
     - [Générer des erreurs](#générer-des-erreurs)
     - [La directive #pragma](#la-directive-pragma)
-    - [Defined (The C Preprocessor)](#defined-the-c-preprocessor)
-    - [#warning (The C Preprocessor)](#warning-the-c-preprocessor)
+      - [pragma pack](#pragma-pack-1)
 - [Langage C++](#langage-c-1)
   - [Introduction: ce qui change](#introduction-ce-qui-change)
     - [Allocation dynamique](#allocation-dynamique-1)
@@ -758,10 +758,14 @@ Note this is a non-standard compiler extension.
 
 ## Preprocessor
 
+### pragma pack
+
 ### Conditions
 
 ```c
-
+#ifdef (ou #if defined)
+#else
+#endif
 ```
 
 ### Utiliser du code C parmi du C++
@@ -803,7 +807,7 @@ Ainsi, quand le préprocesseur inclura ce fichier, cette portion de code ne sera
 ```
 Le seul moyen d’écrire un message sur plusieurs lignes est de terminer une ligne par un antislash (\) pour indiquer que la ligne courante se poursuit sur la ligne suivante.
 
-Si vous préférez plutôt avertir l’utilisateur d’un risque sans interrompre la compilation, vous pouvez utiliser la directive #warning pour générer un avertissement plutôt qu’une erreur.
+Si vous préférez plutôt avertir l’utilisateur d’un risque sans interrompre la compilation, vous pouvez utiliser la directive **#warning** pour générer un avertissement plutôt qu’une erreur.
 ```c
 #warning Ce programme est susceptible de ne pas fonctionner correctement sur cette plateforme
 ```
@@ -812,6 +816,24 @@ Si vous préférez plutôt avertir l’utilisateur d’un risque sans interrompr
 
 La directive préprocesseur `#pragma` est très puissante mais complexe.
 C'est une extension du compilateur.
+
+#### pragma pack
+Permet d'indiquer au compilateur de ne pas ajouter de padding entre les membres d'une structure afin que sa taille soit exactement egale à la somme des tailles de ces membres
+```c
+#pragma pack(1)
+typedef struct
+{    
+    char ProductName[PRODUCT_NAME_MAX_LEN];   /* Called "ProductCode" in data model: it is the commercial reference */
+    unsigned short HwRev;
+    char SerialNumber[SERIAL_NUMBER_MAX_LEN]; /* Unique code number added by Manufacturing with this format: PPYYWWDLLLNNNNN */
+}
+#pragma pack()
+```
+[pragma pack thread](https://devblogs.microsoft.com/oldnewthing/20200103-00/?p=103290#comments)
+
+[IBM pragma](https://www.ibm.com/docs/en/zos/2.3.0?topic=descriptions-pragma-pack)
+
+```
 
 ### Defined (The C Preprocessor)
 
@@ -833,10 +855,6 @@ If the defined operator appears as a result of a macro expansion, the C standard
 #elif defined(__AVR_AT90USB162__)
 #define IR_USE_TIMER1     // tx = pin 17
 ```
-
-### #warning (The C Preprocessor)
-
-Certains compilateurs comme GCC proposent aussi la directive `#warning` qui permet d'afficher un message sans arrêter la compilation.
 
 [Plus sur le préprocesseur]
 
