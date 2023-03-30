@@ -30,6 +30,17 @@ Add a proxy to npm
 npm config set proxy http://username:password@host:port
 npm config set https-proxy http://username:password@host:port
 ```
+
+See the proxy configured for npm:
+```bash
+npm config list | grep proxy
+```
+
+See npm config
+```bash
+npm config list
+```
+
 Open create react-app specific browser:
 
 https://www.tutorialfunda.com/reactjs/open-create-react-app-specific-browser/
