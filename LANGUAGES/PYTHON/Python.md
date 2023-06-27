@@ -27,6 +27,11 @@ Know the current version package installed
 $ pip show <package_name>
 ```
 
+Uninstall a Python package
+```bash
+$ pip uninstall <package_name>
+```
+
 You can use `virtualenv` to choose which python you want to use as temporary
 ```bash
 # Use this to create your temporary python "install"
