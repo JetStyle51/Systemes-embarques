@@ -12,8 +12,19 @@
 
 Know the version
 ```bash
-~$ python -V
+$ python -V
  Python 3.2.1
+```
+
+### Pip
+Know ther versions from a package server
+```bash
+$ pip index version <package_name>
+```
+
+Know the current version package installed
+```bash
+$ pip show <package_name>
 ```
 
 You can use `virtualenv` to choose which python you want to use as temporary
