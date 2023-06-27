@@ -37,10 +37,28 @@ my-movie-app/
 **package-lock.json** est un fichier généré automatiquement par npm lors de l'installation ou de la mise à jour d'un paquet. Ce fichier est utilisé pour stocker les détails précis de chaque paquet installé dans un projet, y compris les informations sur les versions exactes des paquets, leurs dépendances et les chemins d'installation. En d'autres termes, package-lock.json enregistre une "instantané" des dépendances de votre projet et garantit que chaque membre de l'équipe travaillant sur le projet installe exactement les mêmes versions de paquets, ce qui aide à garantir la cohérence et la fiabilité de l'application.
 package-lock.json est utilisé pour déterminer les dépendances exactes d'un projet lors de l'installation ou de la mise à jour des paquets, en utilisant une logique de résolution de dépendances appelée "algorithme de résolution de dépendances à deux niveaux". Cela garantit que les mêmes versions exactes de tous les paquets sont installées, même si certaines dépendances sont partagées entre plusieurs paquets.
 
+# import modules in App
+If you want to import some modules from node_modules, you just need to say, for example, import the whole exported module:
+
+```javascript
+import React from "react";
+```
+
+or import part of the exported module:
+```javascript
+import { Router } from "react-router"
+```
+"react", and "react-router" are modules in your node_modules folde
+
 # Help
 Rename a existing react native project:
 - rename the folder
 - open package.json and change the name project at the beginning of the file
+
+To check that your development environment is set up correctly, you can run the following command in your project folder:
+```bash
+npx react-native doctor
+```
 # Troubleshooting
 
 Stuck at:
