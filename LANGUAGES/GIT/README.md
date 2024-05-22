@@ -52,6 +52,15 @@ $ git add .gitattributes
 
 > Note that defining the file types Git LFS should track will not, by itself, convert any pre-existing files to Git LFS, such as files on other branches or in your prior commit history. To do that, use the ![git lfs migrate(1)](https://github.com/git-lfs/git-lfs/blob/main/docs/man/git-lfs-migrate.adoc?utm_source=gitlfs_site&utm_medium=doc_man_migrate_link&utm_campaign=gitlfs) command, which has a range of options designed to suit various potential use cases.
 
+## Reset
+> Just like the checkout command, the reset command allows you to do several things at once. However, you must be very careful when using this command as it alters the history and can in some cases delete your modifications (if you see --hard, check 6 times what you want to do).
+
+Come back to X commit backward
+```bash
+$ git reset HEAD~X
+```
+
+
 ## GitHub
 A good website that explains how to structure a GitHub repository:
 
